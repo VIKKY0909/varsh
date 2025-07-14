@@ -50,7 +50,7 @@ const Hero = () => {
             </div>
             
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 sm:gap-8">
+            {/* <div className="grid grid-cols-3 gap-4 sm:gap-8">
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-mahogany">5k+</div>
                 <div className="text-xs sm:text-sm text-gray-500">Happy Customers</div>
@@ -63,7 +63,7 @@ const Hero = () => {
                 <div className="text-2xl sm:text-3xl font-bold text-mahogany">4.8★</div>
                 <div className="text-xs sm:text-sm text-gray-500">Customer Rating</div>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Right Content - Image */}

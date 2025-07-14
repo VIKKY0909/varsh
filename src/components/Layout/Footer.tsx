@@ -5,9 +5,9 @@ import { Mail, MapPin, Facebook, Instagram, Twitter, Youtube } from 'lucide-reac
 const Footer = () => {
   const quickLinks = [
     { name: 'About Us', path: '/about' },
-    { name: 'Size Guide', path: '/size-guide' },
+    // { name: 'Size Guide', path: '/size-guide' },
     { name: 'Contact Us', path: '/contact' },
-    { name: 'FAQ', path: '/faq' }
+   
   ];
 
   const categories = [
@@ -114,11 +114,7 @@ const Footer = () => {
             <p className="text-gray-400 text-xs sm:text-sm text-center md:text-left">
               © 2024 Varsh Ethnic Wears. All rights reserved. Crafted with love in India.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
-              <Link to="/privacy" className="text-gray-400 hover:text-blush-pink transition-colors">Privacy Policy</Link>
-              <Link to="/terms" className="text-gray-400 hover:text-blush-pink transition-colors">Terms of Service</Link>
-              <Link to="/cookies" className="text-gray-400 hover:text-blush-pink transition-colors">Cookie Policy</Link>
-            </div>
+            
           </div>
         </div>
       </div>

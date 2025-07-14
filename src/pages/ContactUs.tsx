@@ -86,8 +86,8 @@ const ContactUs = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-mahogany mb-1">Email Us</h3>
-                  <p className="text-gray-600">support@varsh-ethnic-wears.com</p>
-                  <p className="text-gray-600">info@varsh-ethnic-wears.com</p>
+                  <p className="text-gray-600">varsshethnicwears@gmail.com</p>
+                 
                 </div>
               </div>
 
@@ -99,26 +99,12 @@ const ContactUs = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-mahogany mb-1">Call Us</h3>
-                  <p className="text-gray-600">+91 98765 43210</p>
-                  <p className="text-gray-600">+91 87654 32109</p>
+                  <p className="text-gray-600">+91 8511822796</p>
+                  
                 </div>
               </div>
 
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-rose-gold rounded-lg flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-mahogany mb-1">Visit Us</h3>
-                  <p className="text-gray-600">
-                    123 Fashion Street<br />
-                    Mumbai, Maharashtra 400001<br />
-                    India
-                  </p>
-                </div>
-              </div>
+              
 
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
@@ -280,16 +266,11 @@ const ContactUs = () => {
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-mahogany mb-3">How long does shipping take?</h3>
               <p className="text-gray-600">
-                Standard shipping takes 3-5 business days within India. Express shipping is available for faster delivery.
+                Standard shipping takes 8-14 business days within India. Express shipping is available for faster delivery.
               </p>
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-mahogany mb-3">What is your return policy?</h3>
-              <p className="text-gray-600">
-                We offer a 30-day return policy for unused items in original packaging. Custom orders are non-returnable.
-              </p>
-            </div>
+            
 
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-mahogany mb-3">Do you offer custom sizing?</h3>
@@ -298,12 +279,7 @@ const ContactUs = () => {
               </p>
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-mahogany mb-3">Are your products authentic?</h3>
-              <p className="text-gray-600">
-                All our products are authentic ethnic wear sourced directly from skilled artisans across India.
-              </p>
-            </div>
+            
           </div>
         </div>
       </div>
