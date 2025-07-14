@@ -89,7 +89,7 @@ const OrderConfirmation = () => {
       try {
         await navigator.share(shareData);
       } catch (error) {
-        console.log('Error sharing:', error);
+        // console.log('Error sharing:', error);
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
@@ -225,7 +225,7 @@ const OrderConfirmation = () => {
             <div style="text-align: center;">
               <div style="font-size: 30px; margin-bottom: 10px;">🚛</div>
               <strong>Shipping</strong><br>
-              <small>Free delivery in 3-5 days</small>
+              <small>Expected delivery: 13-14 days</small>
             </div>
             <div style="text-align: center;">
               <div style="font-size: 30px; margin-bottom: 10px;">🎉</div>
@@ -238,7 +238,7 @@ const OrderConfirmation = () => {
         <div class="footer">
           <p><strong>Thank you for choosing Varsh Kurtis!</strong></p>
           <p>For any questions about your order, please contact us:</p>
-          <p>📧 Email: support@varshkurtis.com | 📞 Phone: +91 98765 43210</p>
+          <p>📧 Email: varshethnicwears@gmail.com</p>
           <p style="margin-top: 20px; font-size: 12px; color: #999;">
             This is an automated confirmation. Please keep this for your records.
           </p>
@@ -373,7 +373,7 @@ const OrderConfirmation = () => {
                     <Truck className="w-6 h-6 text-purple-600" />
                   </div>
                   <h4 className="font-semibold text-mahogany mb-1">Shipping</h4>
-                  <p className="text-sm text-gray-600">Free delivery in 3-5 days</p>
+                  <p className="text-sm text-gray-600">Expected delivery: 13-14 days</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -432,11 +432,11 @@ const OrderConfirmation = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="mailto:support@varshkurtis.com"
+              href="mailto:varshethnicwears@gmail.com"
               className="flex items-center justify-center gap-2 text-rose-gold hover:text-rose-800 transition-colors"
             >
               <Mail className="w-5 h-5" />
-              support@varshkurtis.com
+              varshethnicwears@gmail.com
             </a>
             <span className="hidden sm:block text-gray-300">|</span>
             <a

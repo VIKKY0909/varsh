@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Check, CreditCard, Truck, MapPin, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, CreditCard, Truck, MapPin, User, X, Trash2 } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -29,14 +29,14 @@ const CheckoutPage = () => {
   const [orderNotes, setOrderNotes] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   
-  const { items, getTotalPrice, getTotalItems, clearCart } = useCart();
+  const { items, getTotalPrice, getTotalItems, clearCart, removeFromCart, updateQuantity } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Remove all taxes - only subtotal and shipping
   const subtotal = getTotalPrice();
-  const shippingCost = subtotal > 1999 ? 0 : 99;
-  const taxAmount = Math.round(subtotal * 0.18); // 18% GST
-  const total = subtotal + shippingCost + taxAmount;
+  const shippingCost = subtotal > 999 ? 0 : 99;
+  const total = subtotal + shippingCost;
 
   const steps = [
     { id: 1, name: 'Shipping', icon: Truck, completed: currentStep > 1 },
@@ -81,6 +81,31 @@ const CheckoutPage = () => {
     }
   };
 
+  const handleRemoveItem = async (itemId: string) => {
+    try {
+      await removeFromCart(itemId);
+      // If cart becomes empty after removal, redirect to cart page
+      if (items.length <= 1) {
+        navigate('/cart');
+      }
+    } catch (error) {
+      console.error('Error removing item:', error);
+    }
+  };
+
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
+    if (newQuantity < 1) {
+      handleRemoveItem(itemId);
+      return;
+    }
+    
+    try {
+      await updateQuantity(itemId, newQuantity);
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!user || !selectedAddress || !paymentMethod) return;
 
@@ -93,12 +118,11 @@ const CheckoutPage = () => {
           user_id: user.id,
           total_amount: total,
           shipping_cost: shippingCost,
-          tax_amount: taxAmount,
           status: 'pending',
           payment_status: 'pending',
           shipping_address: selectedAddress,
           notes: orderNotes,
-          estimated_delivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+          estimated_delivery: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days from now
         })
         .select()
         .single();
@@ -249,8 +273,8 @@ const CheckoutPage = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               {currentStep === 1 && (
                 <ShippingForm
-                  addresses={addresses}
-                  selectedAddress={selectedAddress}
+                  addresses={addresses as any}
+                  selectedAddress={selectedAddress as any}
                   onAddressSelect={setSelectedAddress}
                   onAddressesUpdate={fetchAddresses}
                 />
@@ -273,7 +297,6 @@ const CheckoutPage = () => {
                   onOrderNotesChange={setOrderNotes}
                   subtotal={subtotal}
                   shippingCost={shippingCost}
-                  taxAmount={taxAmount}
                   total={total}
                 />
               )}
@@ -311,25 +334,51 @@ const CheckoutPage = () => {
             </div>
           </div>
 
-          {/* Order Summary Sidebar */}
+          {/* Enhanced Order Summary Sidebar with Item Management */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
               <h3 className="text-xl font-bold text-mahogany mb-6">Order Summary</h3>
 
-              {/* Items */}
-              <div className="space-y-4 mb-6">
+              {/* Items with removal and quantity controls */}
+              <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
                 {items.map((item) => (
-                  <div key={item.id} className="flex gap-3">
+                  <div key={item.id} className="flex gap-3 p-3 border rounded-lg relative group">
                     <img
                       src={item.product.images[0]}
                       alt={item.product.name}
                       className="w-16 h-16 object-cover rounded-lg"
                     />
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-mahogany truncate">{item.product.name}</h4>
+                      <h4 className="font-medium text-mahogany truncate pr-8">{item.product.name}</h4>
                       <p className="text-sm text-gray-600">Size: {item.size}</p>
-                      <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                      
+                      {/* Quantity Controls */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                          className="w-6 h-6 flex items-center justify-center rounded border border-gray-300 hover:bg-gray-50 text-sm"
+                        >
+                          -
+                        </button>
+                        <span className="text-sm px-2">{item.quantity}</span>
+                        <button
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                          className="w-6 h-6 flex items-center justify-center rounded border border-gray-300 hover:bg-gray-50 text-sm"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
+                    
+                    {/* Remove Button */}
+                    <button
+                      onClick={() => handleRemoveItem(item.id)}
+                      className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors opacity-0 group-hover:opacity-100"
+                      title="Remove item"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    
                     <div className="text-right">
                       <p className="font-medium">₹{(item.product.price * item.quantity).toLocaleString()}</p>
                     </div>
@@ -337,7 +386,7 @@ const CheckoutPage = () => {
                 ))}
               </div>
 
-              {/* Totals */}
+              {/* Totals - No tax/GST calculations */}
               <div className="space-y-3 border-t pt-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
@@ -347,14 +396,26 @@ const CheckoutPage = () => {
                   <span className="text-gray-600">Shipping</span>
                   <span>{shippingCost === 0 ? 'FREE' : `₹${shippingCost}`}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tax (GST)</span>
-                  <span>₹{taxAmount.toLocaleString()}</span>
-                </div>
+                {subtotal > 999 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Free shipping applied!</span>
+                    <span>-₹99</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-bold border-t pt-3">
                   <span>Total</span>
                   <span className="text-rose-gold">₹{total.toLocaleString()}</span>
                 </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="mt-6 pt-4 border-t">
+                <button
+                  onClick={() => navigate('/cart')}
+                  className="w-full text-sm text-gray-600 hover:text-mahogany transition-colors"
+                >
+                  Edit cart
+                </button>
               </div>
             </div>
           </div>

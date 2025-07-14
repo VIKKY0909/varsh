@@ -16,6 +16,8 @@ import OrderConfirmation from './components/Orders/OrderConfirmation';
 import Wishlist from './components/Wishlist/WishlistPage';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import AdminRoute from './components/Admin/AdminRoute';
+import ContactUs from './pages/ContactUs';
+import AboutUs from './pages/AboutUs';
 
 function App() {
   return (
@@ -36,6 +38,8 @@ function App() {
                 <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
                 <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="/contact" element={<ContactUs />} />
+                <Route path="/about" element={<AboutUs />} />
                 <Route 
                   path="/admin" 
                   element={

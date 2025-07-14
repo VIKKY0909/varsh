@@ -138,11 +138,7 @@ const OrderReview: React.FC<OrderReviewProps> = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Shipping</span>
-                <span>{shippingCost === 0 ? 'FREE' : `₹${shippingCost}`}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tax (GST)</span>
-                <span>₹{taxAmount.toLocaleString()}</span>
+                <span>{shippingCost === 0 ? 'FREE (Expected delivery: 13-14 days)' : `₹${shippingCost} (Expected delivery: 13-14 days)`}</span>
               </div>
               <div className="border-t pt-3">
                 <div className="flex justify-between text-lg font-bold">

@@ -116,67 +116,8 @@ const OrdersPage = () => {
     }
   };
 
-  const canCancelOrder = (order: Order) => {
-    return ['pending', 'confirmed'].includes(order.status);
-  };
-
   const canDeleteOrder = (order: Order) => {
     return ['cancelled', 'delivered'].includes(order.status);
-  };
-
-  const handleCancelOrder = async (orderId: string) => {
-    setCancellingOrder(orderId);
-    
-    const confirmed = window.confirm(
-      'Are you sure you want to cancel this order? This action cannot be undone and any payment will be refunded within 5-7 business days.'
-    );
-    
-    if (!confirmed) {
-      setCancellingOrder(null);
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ 
-          status: 'cancelled',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId);
-
-      if (error) throw error;
-
-      // Add tracking entry
-      await supabase
-        .from('order_tracking')
-        .insert({
-          order_id: orderId,
-          status: 'Order Cancelled',
-          message: 'Order has been cancelled by customer. Refund will be processed within 5-7 business days.'
-        });
-
-      // Create notification
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: user!.id,
-          type: 'order',
-          title: 'Order Cancelled Successfully',
-          message: 'Your order has been cancelled. Refund will be processed within 5-7 business days.',
-          action_url: `/orders`
-        });
-
-      // Show success message
-      alert('Order cancelled successfully! Refund will be processed within 5-7 business days.');
-      
-      fetchOrders();
-    } catch (error) {
-      console.error('Error cancelling order:', error);
-      alert('Failed to cancel order. Please try again or contact support.');
-    } finally {
-      setCancellingOrder(null);
-    }
   };
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -263,34 +204,6 @@ const OrdersPage = () => {
       alert('Failed to download invoice. Please try again.');
     } finally {
       setDownloadingInvoice(null);
-    }
-  };
-
-  const handleEmailInvoice = async (order: Order) => {
-    setEmailingInvoice(order.id);
-    
-    try {
-      // In a real application, this would call an API endpoint to send email
-      // For now, we'll simulate the process and show a success message
-      
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      
-      // Create notification
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: user!.id,
-          type: 'system',
-          title: 'Invoice Emailed',
-          message: `Invoice for order ${order.order_number} has been sent to your email address.`
-        });
-
-      alert(`Invoice has been sent to ${user?.email}`);
-    } catch (error) {
-      console.error('Error emailing invoice:', error);
-      alert('Failed to email invoice. Please try again.');
-    } finally {
-      setEmailingInvoice(null);
     }
   };
 
@@ -418,7 +331,7 @@ const OrdersPage = () => {
 
         <div class="footer">
           <p>Thank you for shopping with Varsh Kurtis!</p>
-          <p>For any queries, contact us at support@varshkurtis.com or +91 98765 43210</p>
+          <p>For any queries, contact us at varshethnicwears@gmail.com</p>
         </div>
       </body>
       </html>
@@ -515,7 +428,7 @@ const OrdersPage = () => {
                     </p>
                     {order.estimated_delivery && (
                       <p className="text-gray-600 text-sm">
-                        Expected delivery: {new Date(order.estimated_delivery).toLocaleDateString()}
+                        Expected delivery: 13-14 days
                       </p>
                     )}
                   </div>
@@ -573,26 +486,6 @@ const OrdersPage = () => {
                       <Download className="w-4 h-4" />
                       {downloadingInvoice === order.id ? 'Downloading...' : 'Invoice'}
                     </button>
-
-                    <button
-                      onClick={() => handleEmailInvoice(order)}
-                      disabled={emailingInvoice === order.id}
-                      className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50"
-                    >
-                      <Mail className="w-4 h-4" />
-                      {emailingInvoice === order.id ? 'Sending...' : 'Email Invoice'}
-                    </button>
-
-                    {canCancelOrder(order) && (
-                      <button
-                        onClick={() => handleCancelOrder(order.id)}
-                        disabled={cancellingOrder === order.id}
-                        className="flex items-center gap-2 text-red-600 hover:text-red-800 transition-colors disabled:opacity-50"
-                      >
-                        <X className="w-4 h-4" />
-                        {cancellingOrder === order.id ? 'Cancelling...' : 'Cancel'}
-                      </button>
-                    )}
 
                     {canDeleteOrder(order) && (
                       <button

@@ -39,12 +39,6 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       name: 'Digital Wallet',
       icon: Wallet,
       description: 'Paytm, PhonePe, Google Pay'
-    },
-    {
-      id: 'cod',
-      name: 'Cash on Delivery',
-      icon: Shield,
-      description: 'Pay when you receive your order'
     }
   ];
 
@@ -230,25 +224,6 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
                 </div>
               </button>
             ))}
-          </div>
-        </div>
-      )}
-
-      {paymentMethod === 'cod' && (
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-mahogany mb-4">Cash on Delivery</h3>
-          <div className="flex items-start gap-3">
-            <Shield className="w-6 h-6 text-green-600 mt-1" />
-            <div>
-              <p className="text-gray-700 mb-2">
-                Pay ₹{total.toLocaleString()} when your order is delivered to your doorstep.
-              </p>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Cash payment only</li>
-                <li>• Please keep exact change ready</li>
-                <li>• Additional COD charges may apply</li>
-              </ul>
-            </div>
           </div>
         </div>
       )}

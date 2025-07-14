@@ -12,7 +12,7 @@ const CartPage = () => {
 
   const subtotal = getTotalPrice();
   const total = subtotal + (subtotal > 1999 ? 0 : shippingCost);
-  const freeShippingThreshold = 1999;
+  const freeShippingThreshold = 999;
   const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
 
   const handleQuantityChange = async (itemId: string, newQuantity: number) => {
@@ -226,7 +226,7 @@ const CartPage = () => {
                 <div className="space-y-3 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     <Truck className="w-4 h-4" />
-                    <span>Free shipping on orders above ₹1,999</span>
+                    <span>Free shipping on orders above ₹999 (Expected delivery: 13-14 days)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <ShoppingBag className="w-4 h-4" />

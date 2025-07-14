@@ -105,12 +105,6 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) => {
                     <span>₹{order.shipping_cost.toLocaleString()}</span>
                   </div>
                 )}
-                {order.tax_amount > 0 && (
-                  <div className="flex justify-between">
-                    <span>Tax (GST):</span>
-                    <span>₹{order.tax_amount.toLocaleString()}</span>
-                  </div>
-                )}
                 {order.discount_amount > 0 && (
                   <div className="flex justify-between">
                     <span>Discount:</span>
@@ -156,7 +150,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) => {
           {/* Footer */}
           <div className="text-center text-gray-600 text-sm">
             <p className="mb-2">Thank you for shopping with Varsh Kurtis!</p>
-            <p>For any queries, contact us at support@varshkurtis.com or +91 98765 43210</p>
+            <p>For any queries, contact us at varshethnicwears@gmail.com</p>
           </div>
         </div>
 
@@ -169,14 +163,8 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) => {
             <Download className="w-5 h-5" />
             Print/Save as PDF
           </button>
-          <button
-            onClick={() => alert('Invoice will be sent to your email address')}
-            className="flex items-center gap-2 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Mail className="w-5 h-5" />
-            Email Invoice
-          </button>
         </div>
+        <div className="text-center text-red-600 text-sm font-semibold pb-6">No return or exchange policy.</div>
       </div>
     </div>
   );

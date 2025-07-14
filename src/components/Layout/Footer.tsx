@@ -11,8 +11,8 @@ const Footer = () => {
   ];
 
   const categories = [
-    { name: 'Casual Kurtis', path: '/products?category=casual' },
-    { name: 'Formal Kurtis', path: '/products?category=formal' },
+    { name: 'Casual Wear', path: '/products?category=casual' },
+    { name: 'Formal Wear', path: '/products?category=formal' },
     { name: 'Party Wear', path: '/products?category=party' },
     { name: 'Festive Collection', path: '/products?category=festive' },
   ];
@@ -27,10 +27,10 @@ const Footer = () => {
             {/* Brand Info */}
             <div className="lg:col-span-1">
               <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-blush-pink">
-                Varsh Kurtis
+                Varsh Ethnic Wears
               </h3>
               <p className="text-gray-300 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
-                Celebrating the beauty of traditional Indian kurtis with contemporary elegance. Each piece is crafted with love and attention to detail.
+                Celebrating the beauty of traditional Indian ethnic wear with contemporary elegance. Each piece is crafted with love and attention to detail.
               </p>
               
               <div className="space-y-3">
@@ -112,7 +112,7 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-400 text-xs sm:text-sm text-center md:text-left">
-              © 2024 Varsh Kurtis. All rights reserved. Crafted with love in India.
+              © 2024 Varsh Ethnic Wears. All rights reserved. Crafted with love in India.
             </p>
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
               <Link to="/privacy" className="text-gray-400 hover:text-blush-pink transition-colors">Privacy Policy</Link>

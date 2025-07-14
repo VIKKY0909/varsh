@@ -94,7 +94,8 @@ const ProfilePage = () => {
           .insert({
             user_id: user.id,
             full_name: user.user_metadata?.full_name || '',
-            phone: user.user_metadata?.phone || ''
+            phone: user.user_metadata?.phone || '',
+            email: user.email // Save the user's email
           })
           .select()
           .single();
@@ -142,17 +143,18 @@ const ProfilePage = () => {
       const { error } = await supabase
         .from('user_profiles')
         .update({
-          full_name: formData.full_name,
+          full_name: profile?.full_name || '', // Keep original full_name
           phone: formData.phone,
-          date_of_birth: formData.date_of_birth || null,
-          gender: formData.gender || null,
+          date_of_birth: profile?.date_of_birth || null, // Keep original date_of_birth
+          gender: profile?.gender || null, // Keep original gender
+          email: user.email, // Save the user's email
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id);
 
       if (error) throw error;
 
-      setProfile(prev => prev ? { ...prev, ...formData } : null);
+      setProfile(prev => prev ? { ...prev, phone: formData.phone } : null);
       setEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -214,13 +216,8 @@ const ProfilePage = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               {/* Profile Summary */}
               <div className="text-center mb-6 pb-6 border-b">
-                <div className="relative inline-block">
-                  <div className="w-20 h-20 bg-rose-gold rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                    {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                  </div>
-                  <button className="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-md border">
-                    <Camera className="w-4 h-4 text-gray-600" />
-                  </button>
+                <div className="w-20 h-20 bg-rose-gold rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto">
+                  {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </div>
                 <h3 className="font-semibold text-mahogany mt-3">
                   {profile?.full_name || 'User'}
@@ -296,19 +293,9 @@ const ProfilePage = () => {
                       <label className="block text-sm font-medium text-mahogany mb-2">
                         Full Name
                       </label>
-                      {editing ? (
-                        <input
-                          type="text"
-                          name="full_name"
-                          value={formData.full_name}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
-                        />
-                      ) : (
-                        <p className="px-4 py-3 bg-gray-50 rounded-lg">
-                          {profile?.full_name || 'Not provided'}
-                        </p>
-                      )}
+                      <p className="px-4 py-3 bg-gray-50 rounded-lg">
+                        {profile?.full_name || 'Not provided'}
+                      </p>
                     </div>
 
                     <div>
@@ -343,42 +330,18 @@ const ProfilePage = () => {
                       <label className="block text-sm font-medium text-mahogany mb-2">
                         Date of Birth
                       </label>
-                      {editing ? (
-                        <input
-                          type="date"
-                          name="date_of_birth"
-                          value={formData.date_of_birth}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
-                        />
-                      ) : (
-                        <p className="px-4 py-3 bg-gray-50 rounded-lg">
-                          {profile?.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString() : 'Not provided'}
-                        </p>
-                      )}
+                      <p className="px-4 py-3 bg-gray-50 rounded-lg">
+                        {profile?.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString() : 'Not provided'}
+                      </p>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-mahogany mb-2">
                         Gender
                       </label>
-                      {editing ? (
-                        <select
-                          name="gender"
-                          value={formData.gender}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
-                        >
-                          <option value="">Select Gender</option>
-                          <option value="female">Female</option>
-                          <option value="male">Male</option>
-                          <option value="other">Other</option>
-                        </select>
-                      ) : (
-                        <p className="px-4 py-3 bg-gray-50 rounded-lg capitalize">
-                          {profile?.gender || 'Not provided'}
-                        </p>
-                      )}
+                      <p className="px-4 py-3 bg-gray-50 rounded-lg capitalize">
+                        {profile?.gender || 'Not provided'}
+                      </p>
                     </div>
 
                     <div>

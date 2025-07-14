@@ -173,18 +173,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack }) => {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span>₹{(order.total_amount - (order.shipping_cost || 0) - (order.tax_amount || 0)).toLocaleString()}</span>
+                  <span>₹{(order.total_amount - (order.shipping_cost || 0)).toLocaleString()}</span>
                 </div>
                 {order.shipping_cost > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Shipping</span>
                     <span>₹{order.shipping_cost.toLocaleString()}</span>
-                  </div>
-                )}
-                {order.tax_amount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tax</span>
-                    <span>₹{order.tax_amount.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="border-t pt-3">
@@ -230,38 +224,30 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack }) => {
                 </button>
                 <button className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors">
                   <MessageSquare className="w-5 h-5" />
-                  Contact Support
+                  Contact Support: varshethnicwears@gmail.com
                 </button>
-                {order.status === 'delivered' && (
-                  <button className="w-full flex items-center justify-center gap-2 border border-rose-gold text-rose-gold py-3 rounded-lg hover:bg-rose-50 transition-colors">
-                    <Package className="w-5 h-5" />
-                    Return Items
-                  </button>
-                )}
               </div>
             </div>
 
             {/* Delivery Information */}
-            {order.estimated_delivery && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Truck className="w-5 h-5 text-rose-gold" />
-                  <h3 className="text-lg font-bold text-mahogany">Delivery</h3>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Expected</span>
-                    <span>{new Date(order.estimated_delivery).toLocaleDateString()}</span>
-                  </div>
-                  {order.tracking_number && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tracking</span>
-                      <span className="font-mono text-sm">{order.tracking_number}</span>
-                    </div>
-                  )}
-                </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Truck className="w-5 h-5 text-rose-gold" />
+                <h3 className="text-lg font-bold text-mahogany">Delivery</h3>
               </div>
-            )}
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Expected</span>
+                  <span>{order.estimated_delivery ? new Date(order.estimated_delivery).toLocaleDateString() : new Date(new Date(order.created_at).getTime() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString()} (Expected delivery: 13-14 days)</span>
+                </div>
+                {order.tracking_number && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tracking</span>
+                    <span className="font-mono text-sm">{order.tracking_number}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

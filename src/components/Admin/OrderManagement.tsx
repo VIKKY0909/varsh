@@ -1,7 +1,7 @@
 // src/components/Admin/OrderManagement.tsx
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface OrderDetails {
   id: string;
@@ -42,77 +42,149 @@ interface OrderDetails {
   };
 }
 
-const OrderManagement = () => {
-  const [orders, setOrders] = useState<OrderDetails[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const ordersPerPage = 10;
+interface OrderManagementProps {
+  orders?: OrderDetails[];
+  onUpdateStatus?: (orderId: string, newStatus: string) => Promise<void>;
+  onDeleteOrder?: (orderId: string) => Promise<void>;
+}
 
+// --- GROUPING FUNCTION FOR FLAT SQL DATA (MATCHING SQL FIELDS) ---
+function groupOrders(flatOrders: any[]): OrderDetails[] {
+  const ordersMap: { [orderId: string]: OrderDetails } = {};
+
+  flatOrders.forEach(row => {
+    if (!ordersMap[row.order_id]) {
+      ordersMap[row.order_id] = {
+        id: row.order_id,
+        order_number: row.order_id.slice(0, 8).toUpperCase(), // Use order_id as order_number
+        total_amount: Number(row.total_amount),
+        status: row.status,
+        created_at: row.created_at,
+        payment_status: '', // Not present in SQL, leave blank
+        shipping_cost: 0,   // Not present in SQL, leave 0
+        tax_amount: 0,      // Not present in SQL, leave 0
+        discount_amount: 0, // Not present in SQL, leave 0
+        notes: '',          // Not present in SQL, leave blank
+        shipping_address: {
+          full_name: '',
+          address_line1: '',
+          address_line2: '',
+          city: '',
+          state: '',
+          postal_code: '',
+          country: '',
+        },
+        order_items: [],
+        user: {
+          email: '', // Not present in SQL
+          user_profiles: {
+            full_name: row.user_id || '', // Use user_id as fallback for display
+            phone: '',
+          }
+        }
+      };
+    }
+    // Only add item if it exists
+    if (row.order_item_id) {
+      ordersMap[row.order_id].order_items.push({
+        id: row.order_item_id,
+        quantity: row.quantity || 0,
+        size: '', // Not present in SQL
+        price: 0, // Not present in SQL
+        product: {
+          name: row.product_name || '',
+          images: Array.isArray(row.product_images) ? row.product_images : (row.product_images ? [row.product_images] : []),
+        }
+      });
+    }
+  });
+
+  return Object.values(ordersMap);
+}
+
+const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: OrderManagementProps) => {
+  const [orders, setOrders] = useState<OrderDetails[]>(propOrders || []);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
+
+  // Fetch orders with proper grouping from flat SQL result
   const fetchOrders = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch orders with all related data
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (
-            id,
-            quantity,
-            size,
-            price,
-            products (
-              name,
-              images
-            )
-          ),
-          user:user_id (
-            email,
-            user_profiles (
-              full_name,
-              phone
-            )
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .range(page * ordersPerPage, (page + 1) * ordersPerPage - 1);
+      // Fetch the flat array (adjust table/view name as needed)
+      const { data: flatOrders, error: ordersError } = await supabase
+        .from('admin_orders_flat') // <-- Use your new view name
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ordersError) {
+        console.error('Error fetching orders:', ordersError);
+        throw ordersError;
+      }
 
-      setOrders(data || []);
+      if (!flatOrders || flatOrders.length === 0) {
+        setOrders([]);
+        return;
+      }
+
+      // Group and normalize
+      const grouped = groupOrders(flatOrders);
+      setOrders(grouped);
     } catch (err) {
-      console.error('Error fetching orders:', err);
+      console.error('Error in fetchOrders:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch orders');
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch orders on component mount if not provided as props
   useEffect(() => {
-    fetchOrders();
-  }, [page]);
+    if (!propOrders) {
+      fetchOrders();
+    }
+  }, [propOrders]);
 
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-  };
+  // Update orders when props change
+  useEffect(() => {
+    if (propOrders) {
+      setOrders(propOrders);
+    }
+  }, [propOrders]);
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: newStatus })
-        .eq('id', orderId);
+      // If onUpdateStatus prop is provided, use it
+      if (onUpdateStatus) {
+        await onUpdateStatus(orderId, newStatus);
+      } else {
+        // Otherwise, update directly
+        const { error } = await supabase
+          .from('orders')
+          .update({ status: newStatus })
+          .eq('id', orderId);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
-      fetchOrders();
+      // Update local state
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+
+      // Update selected order if it's the one being updated
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+
     } catch (err) {
       console.error('Error updating order status:', err);
       setError(err instanceof Error ? err.message : 'Failed to update order status');
@@ -121,9 +193,41 @@ const OrderManagement = () => {
     }
   };
 
-  const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to delete this order?')) return;
 
-  if (loading) {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (onDeleteOrder) {
+        await onDeleteOrder(orderId);
+      } else {
+        const { error } = await supabase
+          .from('orders')
+          .delete()
+          .eq('id', orderId);
+
+        if (error) throw error;
+      }
+
+      // Remove from local state
+      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+      
+      // Close modal if deleted order was selected
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(null);
+      }
+
+    } catch (err) {
+      console.error('Error deleting order:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete order');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading && orders.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -134,13 +238,46 @@ const OrderManagement = () => {
   if (error) {
     return (
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        {error}
+        <p>{error}</p>
+        <button 
+          onClick={fetchOrders}
+          className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="text-center py-8">
+          <p className="text-gray-500 text-lg">No orders found</p>
+          <button 
+            onClick={fetchOrders}
+            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Refresh Orders
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold">Order Management</h2>
+        <button 
+          onClick={fetchOrders}
+          disabled={loading}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+        >
+          {loading ? 'Loading...' : 'Refresh'}
+        </button>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -148,6 +285,7 @@ const OrderManagement = () => {
               <th className="text-left py-2">Order #</th>
               <th className="text-left py-2">Customer</th>
               <th className="text-left py-2">Amount</th>
+              <th className="text-left py-2">Items</th>
               <th className="text-left py-2">Status</th>
               <th className="text-left py-2">Actions</th>
             </tr>
@@ -157,15 +295,42 @@ const OrderManagement = () => {
               <tr key={order.id} className="border-b hover:bg-gray-50">
                 <td className="py-2">{order.order_number}</td>
                 <td className="py-2">
-                  {order.user?.user_profiles?.full_name || 'N/A'}
+                  {order.user?.user_profiles?.full_name || order.user?.email || 'N/A'}
                 </td>
                 <td className="py-2">₹{order.total_amount.toLocaleString()}</td>
+                <td className="py-2">
+                  {(() => {
+                    
+                    if (!order.order_items || order.order_items.length === 0) {
+                      return <span className="text-xs text-gray-400">No items</span>;
+                    }
+
+                    return (
+                      <div className="text-sm text-gray-700">
+                        {order.order_items.slice(0, 2).map((item, index) => {
+                          // 'products' does not exist on item, so only use 'product'
+                          const productName = item.product?.name || 'Unknown Product';
+                          return (
+                            <div key={item.id || index}>
+                              {productName} x{item.quantity || 0}
+                            </div>
+                          );
+                        })}
+                        {order.order_items.length > 2 && (
+                          <span className="text-xs text-gray-500">
+                            +{order.order_items.length - 2} more
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </td>
                 <td className="py-2">
                   <select
                     value={order.status}
                     onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
                     disabled={loading}
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-2 py-1 text-sm"
                   >
                     <option value="pending">Pending</option>
                     <option value="confirmed">Confirmed</option>
@@ -176,12 +341,22 @@ const OrderManagement = () => {
                   </select>
                 </td>
                 <td className="py-2">
-                  <button
-                    onClick={() => setSelectedOrder(order)}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    <Eye className="w-5 h-5" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedOrder(order)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteOrder(order.id)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Delete Order"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -189,126 +364,130 @@ const OrderManagement = () => {
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between mt-4">
-        <div className="text-sm text-gray-700">
-          Showing {page * ordersPerPage + 1} to{' '}
-          {Math.min((page + 1) * ordersPerPage, totalOrders)} of {totalOrders} orders
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page === 0}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => handlePageChange(page + 1)}
-            disabled={(page + 1) * ordersPerPage >= totalOrders}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Order Details Modal */}
+      {/* Order Detail Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">Order Details #{selectedOrder.order_number}</h2>
-              <button 
-                onClick={() => setSelectedOrder(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Customer Information */}
-              <div className="bg-gray-50 p-4 rounded">
-                <h3 className="font-semibold mb-2">Customer Information</h3>
-                <p>Name: {selectedOrder.user.user_profiles.full_name}</p>
-                <p>Email: {selectedOrder.user.email}</p>
-                <p>Phone: {selectedOrder.user.user_profiles.phone}</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-xl relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
+              onClick={() => setSelectedOrder(null)}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <h3 className="text-2xl font-bold mb-6">Order Details</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h4 className="font-semibold mb-3">Order Information</h4>
+                <div className="space-y-2">
+                  <p><strong>Order #:</strong> {selectedOrder.order_number}</p>
+                  <p><strong>Date:</strong> {new Date(selectedOrder.created_at).toLocaleDateString()}</p>
+                  <p><strong>Status:</strong> 
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                      selectedOrder.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                      selectedOrder.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                      selectedOrder.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {selectedOrder.status.toUpperCase()}
+                    </span>
+                  </p>
+                  <p><strong>Payment Status:</strong> {selectedOrder.payment_status}</p>
+                </div>
               </div>
 
-              {/* Shipping Information */}
+              <div>
+                <h4 className="font-semibold mb-3">Customer Information</h4>
+                <div className="space-y-2">
+                  <p><strong>Name:</strong> {selectedOrder.user?.user_profiles?.full_name || 'N/A'}</p>
+                  <p><strong>Email:</strong> {selectedOrder.user?.email || 'N/A'}</p>
+                  <p><strong>Phone:</strong> {selectedOrder.user?.user_profiles?.phone || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <h4 className="font-semibold mb-3">Shipping Address</h4>
               <div className="bg-gray-50 p-4 rounded">
-                <h3 className="font-semibold mb-2">Shipping Address</h3>
-                <p>{selectedOrder.shipping_address.full_name}</p>
+                <p className="font-medium">{selectedOrder.shipping_address.full_name}</p>
                 <p>{selectedOrder.shipping_address.address_line1}</p>
                 {selectedOrder.shipping_address.address_line2 && (
                   <p>{selectedOrder.shipping_address.address_line2}</p>
                 )}
-                <p>
-                  {selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state}
-                </p>
-                <p>{selectedOrder.shipping_address.postal_code}</p>
+                <p>{selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} {selectedOrder.shipping_address.postal_code}</p>
                 <p>{selectedOrder.shipping_address.country}</p>
               </div>
+            </div>
 
-              {/* Order Items */}
-              <div className="col-span-full">
-                <h3 className="font-semibold mb-2">Order Items</h3>
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2">Product</th>
-                      <th className="text-left py-2">Size</th>
-                      <th className="text-right py-2">Price</th>
-                      <th className="text-right py-2">Quantity</th>
-                      <th className="text-right py-2">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedOrder.order_items.map((item) => (
-                      <tr key={item.id} className="border-b">
-                        <td className="py-2">{item.product.name}</td>
-                        <td className="py-2">{item.size}</td>
-                        <td className="py-2 text-right">₹{item.price.toLocaleString()}</td>
-                        <td className="py-2 text-right">{item.quantity}</td>
-                        <td className="py-2 text-right">
-                          ₹{(item.price * item.quantity).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="mb-6">
+              <h4 className="font-semibold mb-3">Order Items ({selectedOrder.order_items?.length || 0})</h4>
+              <div className="space-y-3">
+                {(() => {
+                  
+                  if (!selectedOrder.order_items || selectedOrder.order_items.length === 0) {
+                    return <p className="text-gray-500 text-center py-4">No items found for this order</p>;
+                  }
 
-              {/* Order Summary */}
-              <div className="col-span-full bg-gray-50 p-4 rounded">
-                <h3 className="font-semibold mb-2">Order Summary</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>₹{selectedOrder.total_amount.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Shipping:</span>
-                    <span>₹{selectedOrder.shipping_cost.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax:</span>
-                    <span>₹{selectedOrder.tax_amount.toLocaleString()}</span>
-                  </div>
-                  {selectedOrder.discount_amount > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Discount:</span>
-                      <span>-₹{selectedOrder.discount_amount.toLocaleString()}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-bold pt-2 border-t">
-                    <span>Total:</span>
-                    <span>₹{selectedOrder.total_amount.toLocaleString()}</span>
-                  </div>
-                </div>
+                  return selectedOrder.order_items.map((item, index) => {
+                    const productName = item.product?.name || 'Product not found';
+                    const productImages = item.product?.images || [];
+                    
+                    return (
+                      <div key={item.id || index} className="flex items-center gap-4 p-3 bg-gray-50 rounded">
+                        {productImages && productImages.length > 0 && (
+                          <img 
+                            src={productImages[0]} 
+                            alt={productName}
+                            className="w-16 h-16 object-cover rounded"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <div className="flex-1">
+                          <p className="font-medium">{productName}</p>
+                          <p className="text-sm text-gray-600">Size: {item.size || 'N/A'} | Quantity: {item.quantity || 0}</p>
+                        </div>
+                        <p className="font-semibold text-lg">₹{(item.price || 0).toLocaleString()}</p>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
+
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center">
+                <span className="text-xl font-bold">Total Amount:</span>
+                <span className="text-2xl font-bold text-green-600">₹{selectedOrder.total_amount.toLocaleString()}</span>
+              </div>
+              {selectedOrder.shipping_cost > 0 && (
+                <div className="flex justify-between items-center mt-2">
+                  <span>Shipping Cost:</span>
+                  <span>₹{selectedOrder.shipping_cost.toLocaleString()}</span>
+                </div>
+              )}
+              {selectedOrder.tax_amount > 0 && (
+                <div className="flex justify-between items-center mt-2">
+                  <span>Tax Amount:</span>
+                  <span>₹{selectedOrder.tax_amount.toLocaleString()}</span>
+                </div>
+              )}
+              {selectedOrder.discount_amount > 0 && (
+                <div className="flex justify-between items-center mt-2">
+                  <span>Discount:</span>
+                  <span className="text-red-600">-₹{selectedOrder.discount_amount.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
+            {selectedOrder.notes && (
+              <div className="mt-4 p-3 bg-yellow-50 rounded">
+                <h5 className="font-medium mb-2">Notes:</h5>
+                <p className="text-sm">{selectedOrder.notes}</p>
+              </div>
+            )}
           </div>
         </div>
       )}

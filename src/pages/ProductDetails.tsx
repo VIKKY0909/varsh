@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Share2, Star, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Plus, Minus, Facebook, Twitter, Instagram } from 'lucide-react';
+import { Heart, ShoppingBag, Share2, Star, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Plus, Minus, Facebook, Twitter, Instagram, ZoomIn, ZoomOut, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,6 +33,12 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Image gallery states
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
   
   const { addToCart } = useCart();
   const { user } = useAuth();
@@ -97,14 +103,14 @@ const ProductDetails = () => {
       setShowAuthModal(true);
       return;
     }
-
     if (!selectedSize) {
       alert('Please select a size');
       return;
     }
-
     await addToCart(id!, selectedSize, quantity);
-    // Show success message or toast
+    // Update stock in backend
+    await supabase.rpc('decrement_product_stock', { product_id: id, quantity });
+    await fetchProduct();
   };
 
   const handleBuyNow = async () => {
@@ -112,13 +118,13 @@ const ProductDetails = () => {
       setShowAuthModal(true);
       return;
     }
-
     if (!selectedSize) {
       alert('Please select a size');
       return;
     }
-
     await addToCart(id!, selectedSize, quantity);
+    await supabase.rpc('decrement_product_stock', { product_id: id, quantity });
+    await fetchProduct();
     navigate('/checkout');
   };
 
@@ -174,6 +180,37 @@ const ProductDetails = () => {
     }
   };
 
+  const openImageModal = (index: number) => {
+    setModalImageIndex(index);
+    setShowImageModal(true);
+  };
+
+  const closeImageModal = () => {
+    setShowImageModal(false);
+    setIsZoomed(false);
+    setZoomLevel(1);
+  };
+
+  const nextImage = () => {
+    if (product) {
+      setModalImageIndex((prev) => (prev + 1) % product.images.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (product) {
+      setModalImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
+    }
+  };
+
+  const handleZoom = (direction: 'in' | 'out') => {
+    if (direction === 'in' && zoomLevel < 3) {
+      setZoomLevel(zoomLevel + 0.5);
+    } else if (direction === 'out' && zoomLevel > 1) {
+      setZoomLevel(zoomLevel - 0.5);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -207,7 +244,7 @@ const ProductDetails = () => {
   }
 
   const discountPercentage = Math.round(((product.original_price - product.price) / product.original_price) * 100);
-  const estimatedDelivery = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString();
+  const estimatedDelivery = 'Expected delivery: 13-14 days';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -228,69 +265,129 @@ const ProductDetails = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-2 gap-12">
-          {/* Product Images */}
-          <div className="space-y-4">
+          {/* Product Images Gallery */}
+          <div className="space-y-6">
+            {/* Main Image with Zoom */}
             <div className="relative bg-white rounded-2xl overflow-hidden shadow-lg">
-              <img
-                src={product.images[selectedImage]}
-                alt={product.name}
-                className="w-full h-96 lg:h-[500px] object-cover"
-              />
-              
-              {/* Image Navigation */}
-              {product.images.length > 1 && (
-                <>
+              <div 
+                className="relative overflow-hidden cursor-zoom-in"
+                onClick={() => openImageModal(selectedImage)}
+              >
+                <img
+                  src={product.images[selectedImage]}
+                  alt={product.name}
+                  className="w-full h-96 lg:h-[500px] object-cover transition-transform duration-300 hover:scale-105"
+                />
+                
+                {/* Zoom Controls */}
+                <div className="absolute top-4 right-4 flex gap-2">
                   <button
-                    onClick={() => setSelectedImage(selectedImage > 0 ? selectedImage - 1 : product.images.length - 1)}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleZoom('out');
+                    }}
+                    className="bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ZoomOut className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setSelectedImage(selectedImage < product.images.length - 1 ? selectedImage + 1 : 0)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleZoom('in');
+                    }}
+                    className="bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ZoomIn className="w-4 h-4" />
                   </button>
-                </>
-              )}
+                </div>
 
-              {/* Badges */}
-              <div className="absolute top-4 left-4 flex flex-col gap-2">
-                {product.is_new && (
-                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    New
-                  </span>
+                {/* Image Navigation */}
+                {product.images.length > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage(selectedImage > 0 ? selectedImage - 1 : product.images.length - 1);
+                      }}
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage(selectedImage < product.images.length - 1 ? selectedImage + 1 : 0);
+                      }}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>
                 )}
-                {product.is_bestseller && (
-                  <span className="bg-rose-gold text-white px-3 py-1 rounded-full text-sm font-medium">
-                    Bestseller
-                  </span>
-                )}
-                {discountPercentage > 0 && (
-                  <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {discountPercentage}% OFF
-                  </span>
+
+                {/* Badges */}
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  {product.is_new && (
+                    <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                      New
+                    </span>
+                  )}
+                  {product.is_bestseller && (
+                    <span className="bg-rose-gold text-white px-3 py-1 rounded-full text-sm font-medium">
+                      Bestseller
+                    </span>
+                  )}
+                  {discountPercentage > 0 && (
+                    <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                      {discountPercentage}% OFF
+                    </span>
+                  )}
+                </div>
+
+                {/* Image Counter */}
+                {product.images.length > 1 && (
+                  <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
+                    {selectedImage + 1} / {product.images.length}
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Thumbnail Images */}
+            {/* Thumbnail Gallery */}
             {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-2 overflow-x-auto pb-2">
                 {product.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                      selectedImage === index ? 'border-rose-gold' : 'border-gray-200'
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                      selectedImage === index ? 'border-rose-gold scale-105' : 'border-gray-200 hover:border-rose-gold'
                     }`}
                   >
-                    <img src={image} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
+                    <img 
+                      src={image} 
+                      alt={`${product.name} ${index + 1}`} 
+                      className="w-full h-full object-cover" 
+                    />
                   </button>
                 ))}
               </div>
             )}
+
+            {/* Image Actions */}
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => openImageModal(selectedImage)}
+                className="flex items-center gap-2 text-rose-gold hover:text-rose-800 font-medium"
+              >
+                <ZoomIn className="w-4 h-4" />
+                View All Images
+              </button>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <RotateCcw className="w-4 h-4" />
+                <span>360° View</span>
+              </div>
+            </div>
           </div>
 
           {/* Product Information */}
@@ -437,14 +534,7 @@ const ProductDetails = () => {
                   <Truck className="w-5 h-5 text-rose-gold" />
                   <div>
                     <p className="font-medium text-mahogany">Free Delivery</p>
-                    <p className="text-sm text-gray-600">On orders above ₹1,999 • Estimated delivery: {estimatedDelivery}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <RotateCcw className="w-5 h-5 text-rose-gold" />
-                  <div>
-                    <p className="font-medium text-mahogany">Easy Returns</p>
-                    <p className="text-sm text-gray-600">7-day return policy</p>
+                    <p className="text-sm text-gray-600">On orders above ₹999 • {estimatedDelivery}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -525,6 +615,91 @@ const ProductDetails = () => {
           </div>
         )}
       </div>
+
+      {/* Image Modal */}
+      {showImageModal && product && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl max-h-full">
+            <button
+              onClick={closeImageModal}
+              className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            
+            <div className="relative">
+              <img
+                src={product.images[modalImageIndex]}
+                alt={product.name}
+                className="max-w-full max-h-[80vh] object-contain"
+                style={{ transform: `scale(${zoomLevel})` }}
+              />
+              
+              {/* Zoom Controls */}
+              <div className="absolute top-4 left-4 flex gap-2">
+                <button
+                  onClick={() => handleZoom('out')}
+                  className="bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleZoom('in')}
+                  className="bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Navigation */}
+              {product.images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+
+              {/* Image Counter */}
+              {product.images.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-full">
+                  {modalImageIndex + 1} / {product.images.length}
+                </div>
+              )}
+            </div>
+
+            {/* Thumbnail Strip */}
+            {product.images.length > 1 && (
+              <div className="mt-4 flex justify-center gap-2">
+                {product.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setModalImageIndex(index)}
+                    className={`w-16 h-16 rounded border-2 transition-all ${
+                      modalImageIndex === index ? 'border-rose-gold' : 'border-gray-300'
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.name} ${index + 1}`}
+                      className="w-full h-full object-cover rounded"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Auth Modal */}
       {showAuthModal && (

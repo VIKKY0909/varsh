@@ -242,9 +242,6 @@ const Products = () => {
     try {
       await addToCart(productId, sizes[0]);
       
-      // Show success notification (you can implement toast here)
-      console.log('Added to cart successfully');
-      
     } catch (error) {
       console.error('Error adding to cart:', error);
       setError('Failed to add item to cart. Please try again.');

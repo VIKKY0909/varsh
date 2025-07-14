@@ -109,7 +109,9 @@ const WishlistPage = () => {
           url: window.location.href,
         });
       } catch (error) {
-        console.log('Error sharing:', error);
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(window.location.href);
+        alert('Wishlist link copied to clipboard!');
       }
     } else {
       // Fallback: copy to clipboard

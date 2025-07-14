@@ -1,0 +1,500 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.addresses (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  type text NOT NULL CHECK (type = ANY (ARRAY['shipping'::text, 'billing'::text, 'both'::text])),
+  is_default boolean DEFAULT false,
+  full_name text NOT NULL,
+  phone text NOT NULL,
+  address_line_1 text NOT NULL,
+  address_line_2 text,
+  city text NOT NULL,
+  state text NOT NULL,
+  postal_code text NOT NULL,
+  country text NOT NULL DEFAULT 'India'::text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT addresses_pkey PRIMARY KEY (id),
+  CONSTRAINT addresses_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.canceled_orders (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  user_id uuid NOT NULL,
+  order_details text,
+  canceled_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT canceled_orders_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.cart_items (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  product_id uuid NOT NULL,
+  quantity integer NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  size text NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT cart_items_pkey PRIMARY KEY (id),
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id),
+  CONSTRAINT cart_items_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  type text NOT NULL CHECK (type = ANY (ARRAY['order'::text, 'wishlist'::text, 'promotion'::text, 'system'::text])),
+  title text NOT NULL,
+  message text NOT NULL,
+  is_read boolean DEFAULT false,
+  action_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT notifications_pkey PRIMARY KEY (id),
+  CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.order_items (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  order_id uuid NOT NULL,
+  product_id uuid NOT NULL,
+  quantity integer NOT NULL CHECK (quantity > 0),
+  size text NOT NULL,
+  price numeric NOT NULL CHECK (price > 0::numeric),
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT order_items_pkey PRIMARY KEY (id),
+  CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id),
+  CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
+);
+CREATE TABLE public.order_tracking (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  order_id uuid NOT NULL,
+  status text NOT NULL,
+  message text,
+  location text,
+  tracking_number text,
+  estimated_delivery timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT order_tracking_pkey PRIMARY KEY (id),
+  CONSTRAINT order_tracking_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
+);
+CREATE TABLE public.orders (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  total_amount numeric NOT NULL CHECK (total_amount > 0::numeric),
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'processing'::text, 'shipped'::text, 'delivered'::text, 'cancelled'::text])),
+  shipping_address jsonb NOT NULL,
+  payment_status text NOT NULL DEFAULT 'pending'::text CHECK (payment_status = ANY (ARRAY['pending'::text, 'paid'::text, 'failed'::text, 'refunded'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  order_number text UNIQUE,
+  shipping_cost numeric DEFAULT 0,
+  tax_amount numeric DEFAULT 0,
+  discount_amount numeric DEFAULT 0,
+  notes text,
+  estimated_delivery timestamp with time zone,
+  tracking_number text,
+  canceled boolean DEFAULT false,
+  CONSTRAINT orders_pkey PRIMARY KEY (id),
+  CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.payment_methods (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  type text NOT NULL CHECK (type = ANY (ARRAY['card'::text, 'upi'::text, 'wallet'::text])),
+  is_default boolean DEFAULT false,
+  display_name text NOT NULL,
+  last_four text,
+  expiry_month integer,
+  expiry_year integer,
+  provider text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT payment_methods_pkey PRIMARY KEY (id),
+  CONSTRAINT payment_methods_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.product_reviews (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  product_id uuid NOT NULL,
+  order_id uuid,
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  title text,
+  comment text,
+  images ARRAY DEFAULT '{}'::text[],
+  is_verified_purchase boolean DEFAULT false,
+  helpful_count integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT product_reviews_pkey PRIMARY KEY (id),
+  CONSTRAINT product_reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT product_reviews_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id),
+  CONSTRAINT product_reviews_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id)
+);
+CREATE TABLE public.products (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  description text NOT NULL,
+  price numeric NOT NULL CHECK (price > 0::numeric),
+  original_price numeric NOT NULL CHECK (original_price > 0::numeric),
+  category text NOT NULL CHECK (category = ANY (ARRAY['casual'::text, 'formal'::text, 'party'::text, 'festive'::text])),
+  size ARRAY NOT NULL DEFAULT '{}'::text[],
+  color text NOT NULL,
+  material text NOT NULL,
+  care_instructions text NOT NULL DEFAULT ''::text,
+  images ARRAY NOT NULL DEFAULT '{}'::text[],
+  stock_quantity integer NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
+  is_featured boolean DEFAULT false,
+  is_new boolean DEFAULT false,
+  is_bestseller boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT products_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.user_profiles (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL UNIQUE,
+  full_name text,
+  phone text,
+  date_of_birth date,
+  gender text CHECK (gender = ANY (ARRAY['male'::text, 'female'::text, 'other'::text])),
+  profile_picture_url text,
+  preferences jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  is_admin boolean DEFAULT false,
+  CONSTRAINT user_profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT user_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.wishlist (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  product_id uuid NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  notify_on_stock boolean DEFAULT true,
+  notify_on_price_drop boolean DEFAULT true,
+  CONSTRAINT wishlist_pkey PRIMARY KEY (id),
+  CONSTRAINT wishlist_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id),
+  CONSTRAINT wishlist_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE auth.audit_log_entries (
+  instance_id uuid,
+  id uuid NOT NULL,
+  payload json,
+  created_at timestamp with time zone,
+  ip_address character varying NOT NULL DEFAULT ''::character varying,
+  CONSTRAINT audit_log_entries_pkey PRIMARY KEY (id)
+);
+CREATE TABLE auth.flow_state (
+  id uuid NOT NULL,
+  user_id uuid,
+  auth_code text NOT NULL,
+  code_challenge_method USER-DEFINED NOT NULL,
+  code_challenge text NOT NULL,
+  provider_type text NOT NULL,
+  provider_access_token text,
+  provider_refresh_token text,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  authentication_method text NOT NULL,
+  auth_code_issued_at timestamp with time zone,
+  CONSTRAINT flow_state_pkey PRIMARY KEY (id)
+);
+CREATE TABLE auth.identities (
+  provider_id text NOT NULL,
+  user_id uuid NOT NULL,
+  identity_data jsonb NOT NULL,
+  provider text NOT NULL,
+  last_sign_in_at timestamp with time zone,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  email text DEFAULT lower((identity_data ->> 'email'::text)),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  CONSTRAINT identities_pkey PRIMARY KEY (id),
+  CONSTRAINT identities_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE auth.instances (
+  id uuid NOT NULL,
+  uuid uuid,
+  raw_base_config text,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  CONSTRAINT instances_pkey PRIMARY KEY (id)
+);
+CREATE TABLE auth.mfa_amr_claims (
+  session_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL,
+  updated_at timestamp with time zone NOT NULL,
+  authentication_method text NOT NULL,
+  id uuid NOT NULL,
+  CONSTRAINT mfa_amr_claims_pkey PRIMARY KEY (id),
+  CONSTRAINT mfa_amr_claims_session_id_fkey FOREIGN KEY (session_id) REFERENCES auth.sessions(id)
+);
+CREATE TABLE auth.mfa_challenges (
+  id uuid NOT NULL,
+  factor_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL,
+  verified_at timestamp with time zone,
+  ip_address inet NOT NULL,
+  otp_code text,
+  web_authn_session_data jsonb,
+  CONSTRAINT mfa_challenges_pkey PRIMARY KEY (id),
+  CONSTRAINT mfa_challenges_auth_factor_id_fkey FOREIGN KEY (factor_id) REFERENCES auth.mfa_factors(id)
+);
+CREATE TABLE auth.mfa_factors (
+  id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  friendly_name text,
+  factor_type USER-DEFINED NOT NULL,
+  status USER-DEFINED NOT NULL,
+  created_at timestamp with time zone NOT NULL,
+  updated_at timestamp with time zone NOT NULL,
+  secret text,
+  phone text,
+  last_challenged_at timestamp with time zone UNIQUE,
+  web_authn_credential jsonb,
+  web_authn_aaguid uuid,
+  CONSTRAINT mfa_factors_pkey PRIMARY KEY (id),
+  CONSTRAINT mfa_factors_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE auth.one_time_tokens (
+  id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  token_type USER-DEFINED NOT NULL,
+  token_hash text NOT NULL CHECK (char_length(token_hash) > 0),
+  relates_to text NOT NULL,
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  updated_at timestamp without time zone NOT NULL DEFAULT now(),
+  CONSTRAINT one_time_tokens_pkey PRIMARY KEY (id),
+  CONSTRAINT one_time_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE auth.refresh_tokens (
+  instance_id uuid,
+  id bigint NOT NULL DEFAULT nextval('auth.refresh_tokens_id_seq'::regclass),
+  token character varying UNIQUE,
+  user_id character varying,
+  revoked boolean,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  parent character varying,
+  session_id uuid,
+  CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id),
+  CONSTRAINT refresh_tokens_session_id_fkey FOREIGN KEY (session_id) REFERENCES auth.sessions(id)
+);
+CREATE TABLE auth.saml_providers (
+  id uuid NOT NULL,
+  sso_provider_id uuid NOT NULL,
+  entity_id text NOT NULL UNIQUE CHECK (char_length(entity_id) > 0),
+  metadata_xml text NOT NULL CHECK (char_length(metadata_xml) > 0),
+  metadata_url text CHECK (metadata_url = NULL::text OR char_length(metadata_url) > 0),
+  attribute_mapping jsonb,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  name_id_format text,
+  CONSTRAINT saml_providers_pkey PRIMARY KEY (id),
+  CONSTRAINT saml_providers_sso_provider_id_fkey FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id)
+);
+CREATE TABLE auth.saml_relay_states (
+  id uuid NOT NULL,
+  sso_provider_id uuid NOT NULL,
+  request_id text NOT NULL CHECK (char_length(request_id) > 0),
+  for_email text,
+  redirect_to text,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  flow_state_id uuid,
+  CONSTRAINT saml_relay_states_pkey PRIMARY KEY (id),
+  CONSTRAINT saml_relay_states_flow_state_id_fkey FOREIGN KEY (flow_state_id) REFERENCES auth.flow_state(id),
+  CONSTRAINT saml_relay_states_sso_provider_id_fkey FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id)
+);
+CREATE TABLE auth.schema_migrations (
+  version character varying NOT NULL,
+  CONSTRAINT schema_migrations_pkey PRIMARY KEY (version)
+);
+CREATE TABLE auth.sessions (
+  id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  factor_id uuid,
+  aal USER-DEFINED,
+  not_after timestamp with time zone,
+  refreshed_at timestamp without time zone,
+  user_agent text,
+  ip inet,
+  tag text,
+  CONSTRAINT sessions_pkey PRIMARY KEY (id),
+  CONSTRAINT sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE auth.sso_domains (
+  id uuid NOT NULL,
+  sso_provider_id uuid NOT NULL,
+  domain text NOT NULL CHECK (char_length(domain) > 0),
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  CONSTRAINT sso_domains_pkey PRIMARY KEY (id),
+  CONSTRAINT sso_domains_sso_provider_id_fkey FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id)
+);
+CREATE TABLE auth.sso_providers (
+  id uuid NOT NULL,
+  resource_id text CHECK (resource_id = NULL::text OR char_length(resource_id) > 0),
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  CONSTRAINT sso_providers_pkey PRIMARY KEY (id)
+);
+CREATE TABLE auth.users (
+  instance_id uuid,
+  id uuid NOT NULL,
+  aud character varying,
+  role character varying,
+  email character varying,
+  encrypted_password character varying,
+  email_confirmed_at timestamp with time zone,
+  invited_at timestamp with time zone,
+  confirmation_token character varying,
+  confirmation_sent_at timestamp with time zone,
+  recovery_token character varying,
+  recovery_sent_at timestamp with time zone,
+  email_change_token_new character varying,
+  email_change character varying,
+  email_change_sent_at timestamp with time zone,
+  last_sign_in_at timestamp with time zone,
+  raw_app_meta_data jsonb,
+  raw_user_meta_data jsonb,
+  is_super_admin boolean,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  phone text DEFAULT NULL::character varying UNIQUE,
+  phone_confirmed_at timestamp with time zone,
+  phone_change text DEFAULT ''::character varying,
+  phone_change_token character varying DEFAULT ''::character varying,
+  phone_change_sent_at timestamp with time zone,
+  confirmed_at timestamp with time zone DEFAULT LEAST(email_confirmed_at, phone_confirmed_at),
+  email_change_token_current character varying DEFAULT ''::character varying,
+  email_change_confirm_status smallint DEFAULT 0 CHECK (email_change_confirm_status >= 0 AND email_change_confirm_status <= 2),
+  banned_until timestamp with time zone,
+  reauthentication_token character varying DEFAULT ''::character varying,
+  reauthentication_sent_at timestamp with time zone,
+  is_sso_user boolean NOT NULL DEFAULT false,
+  deleted_at timestamp with time zone,
+  is_anonymous boolean NOT NULL DEFAULT false,
+  CONSTRAINT users_pkey PRIMARY KEY (id)
+);
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE realtime.messages (
+  topic text NOT NULL,
+  extension text NOT NULL,
+  payload jsonb,
+  event text,
+  private boolean DEFAULT false,
+  updated_at timestamp without time zone NOT NULL DEFAULT now(),
+  inserted_at timestamp without time zone NOT NULL DEFAULT now(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  CONSTRAINT messages_pkey PRIMARY KEY (inserted_at, id)
+);
+CREATE TABLE realtime.schema_migrations (
+  version bigint NOT NULL,
+  inserted_at timestamp without time zone,
+  CONSTRAINT schema_migrations_pkey PRIMARY KEY (version)
+);
+CREATE TABLE realtime.subscription (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  subscription_id uuid NOT NULL,
+  entity regclass NOT NULL,
+  filters ARRAY NOT NULL DEFAULT '{}'::realtime.user_defined_filter[],
+  claims jsonb NOT NULL,
+  claims_role regrole NOT NULL DEFAULT realtime.to_regrole((claims ->> 'role'::text)),
+  created_at timestamp without time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT subscription_pkey PRIMARY KEY (id)
+);
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE storage.buckets (
+  id text NOT NULL,
+  name text NOT NULL,
+  owner uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  public boolean DEFAULT false,
+  avif_autodetection boolean DEFAULT false,
+  file_size_limit bigint,
+  allowed_mime_types ARRAY,
+  owner_id text,
+  CONSTRAINT buckets_pkey PRIMARY KEY (id)
+);
+CREATE TABLE storage.migrations (
+  id integer NOT NULL,
+  name character varying NOT NULL UNIQUE,
+  hash character varying NOT NULL,
+  executed_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT migrations_pkey PRIMARY KEY (id)
+);
+CREATE TABLE storage.objects (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  bucket_id text,
+  name text,
+  owner uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  last_accessed_at timestamp with time zone DEFAULT now(),
+  metadata jsonb,
+  path_tokens ARRAY DEFAULT string_to_array(name, '/'::text),
+  version text,
+  owner_id text,
+  user_metadata jsonb,
+  CONSTRAINT objects_pkey PRIMARY KEY (id),
+  CONSTRAINT objects_bucketId_fkey FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id)
+);
+CREATE TABLE storage.s3_multipart_uploads (
+  id text NOT NULL,
+  in_progress_size bigint NOT NULL DEFAULT 0,
+  upload_signature text NOT NULL,
+  bucket_id text NOT NULL,
+  key text NOT NULL,
+  version text NOT NULL,
+  owner_id text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  user_metadata jsonb,
+  CONSTRAINT s3_multipart_uploads_pkey PRIMARY KEY (id),
+  CONSTRAINT s3_multipart_uploads_bucket_id_fkey FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id)
+);
+CREATE TABLE storage.s3_multipart_uploads_parts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  upload_id text NOT NULL,
+  size bigint NOT NULL DEFAULT 0,
+  part_number integer NOT NULL,
+  bucket_id text NOT NULL,
+  key text NOT NULL,
+  etag text NOT NULL,
+  owner_id text,
+  version text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT s3_multipart_uploads_parts_pkey PRIMARY KEY (id),
+  CONSTRAINT s3_multipart_uploads_parts_bucket_id_fkey FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id),
+  CONSTRAINT s3_multipart_uploads_parts_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES storage.s3_multipart_uploads(id)
+);
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE supabase_migrations.schema_migrations (
+  version text NOT NULL,
+  statements ARRAY,
+  name text,
+  CONSTRAINT schema_migrations_pkey PRIMARY KEY (version)
+);
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE vault.secrets (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text,
+  description text NOT NULL DEFAULT ''::text,
+  secret text NOT NULL,
+  key_id uuid,
+  nonce bytea DEFAULT vault._crypto_aead_det_noncegen(),
+  created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT secrets_pkey PRIMARY KEY (id)
+);
