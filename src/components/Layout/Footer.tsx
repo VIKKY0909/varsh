@@ -86,12 +86,8 @@ const Footer = () => {
               
               <div className="flex gap-3 sm:gap-4 mb-6 sm:mb-8">
                 
-                <a href="#" className="bg-rose-gold p-2 sm:p-3 rounded-full hover:bg-copper transition-all duration-300 transform hover:scale-110">
+                <a href="https://instagram.com/varshethnicwears" className="bg-rose-gold p-2 sm:p-3 rounded-full hover:bg-copper transition-all duration-300 transform hover:scale-110">
                   <Instagram className="w-4 h-4 sm:w-5 sm:h-5" />
-                </a>
-                
-                <a href="#" className="bg-rose-gold p-2 sm:p-3 rounded-full hover:bg-copper transition-all duration-300 transform hover:scale-110">
-                  <Youtube className="w-4 h-4 sm:w-5 sm:h-5" />
                 </a>
               </div>
 
