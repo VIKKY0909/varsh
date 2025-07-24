@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import img from "../../lib/5dec5227-cf34-4607-a33e-21c33efd7203_20250725_014719_0000.jpg";
+import {img} from "../../lib/5dec5227-cf34-4607-a33e-21c33efd7203_20250725_014719_0000.jpg";
 
 const Hero = () => {
   return (
