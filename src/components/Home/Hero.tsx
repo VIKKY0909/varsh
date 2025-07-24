@@ -1,98 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { supabase } from '../../lib/supabase'; // Adjust path as needed
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  original_price: number;
-  images: string[];
-  category: string;
-  material: string;
-  color: string;
-  size: string[];
-  is_new: boolean;
-  is_bestseller: boolean;
-  stock_quantity: number;
-  created_at: string;
-  rating?: number;
-  review_count?: number;
-}
-
+import img from '../../lib/5dec5227-cf34-4607-a33e-21c33efd7203_20250725_014719_0000.jpg';
 const Hero = () => {
-  const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
-  // Fetch featured product
-  useEffect(() => {
-    const fetchFeaturedProduct = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch one featured product (preferably bestseller or newest)
-        let query = supabase
-          .from('products')
-          .select(`
-            id, name, description, price, original_price, images, category, 
-            material, color, size, is_new, is_bestseller, stock_quantity, 
-            created_at, rating, review_count
-          `)
-          .gt('stock_quantity', 0) // Only in-stock items
-          .limit(1);
-
-        // Priority: bestseller > new > random
-        const { data: bestsellerData } = await query.eq('is_bestseller', true).order('created_at', { ascending: false });
-        
-        if (bestsellerData && bestsellerData.length > 0) {
-          setFeaturedProduct(bestsellerData[0]);
-        } else {
-          // Fallback to newest product
-          const { data: newData } = await query.eq('is_new', true).order('created_at', { ascending: false });
-          
-          if (newData && newData.length > 0) {
-            setFeaturedProduct(newData[0]);
-          } else {
-            // Final fallback to any product
-            const { data: anyData, error: anyError } = await supabase
-              .from('products')
-              .select(`
-                id, name, description, price, original_price, images, category, 
-                material, color, size, is_new, is_bestseller, stock_quantity, 
-                created_at, rating, review_count
-              `)
-              .gt('stock_quantity', 0)
-              .order('created_at', { ascending: false })
-              .limit(1);
-
-            if (anyError) throw anyError;
-            setFeaturedProduct(anyData?.[0] || null);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching featured product:', err);
-        setError('Failed to load featured product');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFeaturedProduct();
-  }, []);
-
-  const handleViewProduct = () => {
-    if (featuredProduct) {
-      // Replace with your navigation logic
-      // navigate(`/product/${featuredProduct.id}`);
-      window.location.href = `/product/${featuredProduct.id}`;
-    }
+  // Static featured product data
+  const featuredProduct = {
+    id: "1",
+    name: "IndiRatri",
+    description: "Infuse elegance",
+    price: 449,
+    original_price: 850,
+    image: img
   };
 
-  const getDiscountPercentage = (original: number, current: number) => {
-    return Math.round(((original - current) / original) * 100);
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+    setImageLoaded(false);
   };
 
   return (
@@ -150,124 +81,64 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Right Content - Dynamic Featured Product */}
+          {/* Right Content - Image */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-blush-pink to-rose-gold rounded-3xl transform rotate-6 opacity-20"></div>
             <div className="relative bg-white rounded-3xl overflow-hidden shadow-2xl">
-              {loading ? (
-                // Loading skeleton
-                <div className="w-full h-96 lg:h-[500px] bg-gray-200 animate-pulse flex items-center justify-center">
-                  <div className="text-gray-400">Loading featured product...</div>
-                </div>
-              ) : error ? (
-                // Error state
-                <div className="w-full h-96 lg:h-[500px] bg-gray-100 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <p className="text-red-500 mb-2">⚠️ {error}</p>
-                    <p className="text-sm">Please check back later</p>
-                  </div>
-                </div>
-              ) : featuredProduct ? (
+              {!imageError ? (
                 <>
-                  {/* Product Badges */}
-                  <div className="absolute top-4 left-4 z-10 flex gap-2">
-                    {featuredProduct.is_new && (
-                      <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                        New
-                      </span>
-                    )}
-                    {featuredProduct.is_bestseller && (
-                      <span className="bg-rose-gold text-white px-2 py-1 rounded-full text-xs font-medium">
-                        Bestseller
-                      </span>
-                    )}
-                    {featuredProduct.original_price > featuredProduct.price && (
-                      <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                        {getDiscountPercentage(featuredProduct.original_price, featuredProduct.price)}% OFF
-                      </span>
-                    )}
-                  </div>
-
                   <img
-                    src={featuredProduct.images?.[0] || "https://images.pexels.com/photos/6146970/pexels-photo-6146970.jpeg?auto=compress&cs=tinysrgb&w=800"}
+                    src={featuredProduct.image}
                     alt={featuredProduct.name}
-                    className="w-full h-96 lg:h-[500px] object-cover"
-                    onError={(e) => {
-                      e.target.src = "https://images.pexels.com/photos/6146970/pexels-photo-6146970.jpeg?auto=compress&cs=tinysrgb&w=800";
-                    }}
+                    className={`w-full h-96 lg:h-[500px] object-cover transition-opacity duration-300 ${
+                      imageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
                   />
-                  
-                  <div className="absolute bottom-6 left-6 right-6 bg-white bg-opacity-95 backdrop-blur rounded-xl p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-mahogany mb-1 line-clamp-1">
-                          Featured: {featuredProduct.name}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                          {featuredProduct.description}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                          <span className="bg-gray-100 px-2 py-1 rounded">
-                            {featuredProduct.category}
-                          </span>
-                          <span className="bg-gray-100 px-2 py-1 rounded">
-                            {featuredProduct.material}
-                          </span>
-                          <span className="bg-gray-100 px-2 py-1 rounded">
-                            {featuredProduct.color}
-                          </span>
-                        </div>
+                  {!imageLoaded && (
+                    <div className="w-full h-96 lg:h-[500px] bg-gradient-to-br from-blush-pink to-rose-gold opacity-20 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold mx-auto mb-4"></div>
+                        <p className="text-mahogany">Loading image...</p>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-rose-gold font-bold text-lg">
-                          ₹{featuredProduct.price.toLocaleString()}
-                        </span>
-                        {featuredProduct.original_price > featuredProduct.price && (
-                          <span className="text-gray-400 line-through text-sm">
-                            ₹{featuredProduct.original_price.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-3">
-                        {featuredProduct.rating && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <span>⭐</span>
-                            <span>{featuredProduct.rating.toFixed(1)}</span>
-                            {featuredProduct.review_count && (
-                              <span>({featuredProduct.review_count})</span>
-                            )}
-                          </div>
-                        )}
-                        
-                        <button 
-                          className="text-sm text-rose-gold hover:text-mahogany transition-colors font-medium"
-                          onClick={handleViewProduct}
-                        >
-                          View Details →
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {featuredProduct.stock_quantity <= 5 && (
-                      <div className="mt-2 text-xs text-red-500">
-                        Only {featuredProduct.stock_quantity} left in stock!
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </>
               ) : (
-                // No product found
-                <div className="w-full h-96 lg:h-[500px] bg-gray-100 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <p>No featured product available</p>
-                    <p className="text-sm">Please check back later</p>
+                <div className="w-full h-96 lg:h-[500px] bg-gradient-to-br from-blush-pink to-rose-gold opacity-30 flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-mahogany mb-2">Featured Collection</h3>
+                    <p className="text-gray-600 text-sm">Exquisite ethnic wear crafted with love</p>
                   </div>
                 </div>
               )}
+              
+              {/* Featured Product Info */}
+              <div className="absolute bottom-6 left-6 right-6 bg-white bg-opacity-95 backdrop-blur rounded-xl p-4">
+                <h3 className="font-semibold text-mahogany mb-1">
+                  Featured: {featuredProduct.name}
+                </h3>
+                <p className="text-sm text-gray-600 line-clamp-2">
+                  {featuredProduct.description}
+                </p>
+                <div className="flex items-center justify-between mt-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-gold font-bold">₹{featuredProduct.price.toLocaleString()}</span>
+                    <span className="text-sm text-gray-500 line-through">
+                      ₹{featuredProduct.original_price.toLocaleString()}
+                    </span>
+                  </div>
+                  <button className="text-sm text-rose-gold hover:text-mahogany transition-colors">
+                    View Details →
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
