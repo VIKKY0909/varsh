@@ -59,37 +59,42 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur shadow-md border-b border-rose-100">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-rose-50 to-pink-50 text-center py-2 text-sm text-red-900">
-        Free shipping on orders above 999 | Authentic handcrafted ethnic wear
+      <div className="bg-gradient-to-r from-rose-50 to-pink-50 text-center py-1.5 sm:py-2 px-2 text-xs sm:text-sm text-mahogany">
+        <span className="hidden sm:inline">Free shipping on orders above 999 | Authentic handcrafted ethnic wear</span>
+        <span className="sm:hidden">Free shipping above ₹999</span>
       </div>
       
       {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 relative">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20 relative">
           {/* Logo/Brand */}
-          <Link to="/" className="flex-shrink-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-red-900 tracking-wide">
-              Varsh <span className="text-rose-600">Ethnic Wears</span>
+          <Link to="/" className="flex-shrink-0 min-w-0">
+            <h1 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-mahogany tracking-wide">
+              <span className="hidden xs:inline">Varsh </span>
+              <span className="text-rose-gold">
+                <span className="xs:hidden">VEW</span>
+                <span className="hidden xs:inline">Ethnic Wears</span>
+              </span>
             </h1>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8 mx-auto">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 mx-auto">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className={`relative px-2 py-1 font-semibold text-lg transition-colors duration-200 group ${
+                className={`relative px-2 py-1 font-semibold text-base xl:text-lg transition-colors duration-200 group ${
                   isActive(link.path)
-                    ? 'text-rose-600'
-                    : 'text-red-900 hover:text-rose-600'
+                    ? 'text-rose-gold'
+                    : 'text-mahogany hover:text-rose-gold'
                 }`}
                 tabIndex={0}
                 aria-current={isActive(link.path) ? 'page' : undefined}
               >
                 <span>{link.name}</span>
                 <span
-                  className={`absolute left-0 -bottom-1 w-full h-0.5 rounded bg-rose-600 transition-all duration-300 ${
+                  className={`absolute left-0 -bottom-1 w-full h-0.5 rounded bg-rose-gold transition-all duration-300 ${
                     isActive(link.path) ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 group-hover:opacity-100 group-hover:scale-x-100'
                   }`}
                 />
@@ -97,10 +102,10 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-xs mx-8">
+          {/* Search Bar - Desktop Only */}
+          <div className="hidden md:flex flex-1 max-w-xs lg:max-w-sm xl:max-w-md mx-4 lg:mx-8">
             <form onSubmit={handleSearch} className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 lg:w-5 lg:h-5" />
               <input
                 type="text"
                 placeholder="Search products..."
@@ -108,40 +113,40 @@ const Header = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
-                className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-600 focus:border-transparent text-base transition-all duration-300 ${searchFocused ? 'shadow-lg ring-2 ring-rose-600' : ''}`}
+                className={`w-full pl-9 lg:pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent text-sm lg:text-base transition-all duration-300 ${searchFocused ? 'shadow-lg ring-2 ring-rose-gold' : ''}`}
                 aria-label="Search products"
               />
             </form>
           </div>
 
           {/* Right Icons */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* Mobile Search */}
             <button
-              className="md:hidden p-2 hover:bg-rose-50 rounded-full transition-colors"
+              className="md:hidden p-1.5 sm:p-2 hover:bg-rose-50 rounded-full transition-colors"
               aria-label="Open search"
             >
-              <Search className="w-5 h-5 text-red-900 hover:text-rose-600 transition-colors" />
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-mahogany hover:text-rose-gold transition-colors" />
             </button>
 
             {/* Wishlist */}
             <Link
               to="/wishlist"
-              className="relative p-2 hover:bg-rose-50 rounded-full transition-colors group"
+              className="relative p-1.5 sm:p-2 hover:bg-rose-50 rounded-full transition-colors group"
               aria-label="Wishlist"
             >
-              <Heart className="w-5 h-5 text-red-900 group-hover:text-rose-600 transition-colors" />
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-mahogany group-hover:text-rose-gold transition-colors" />
             </Link>
 
             {/* Cart */}
             <Link
               to="/cart"
-              className="relative p-2 hover:bg-rose-50 rounded-full transition-colors group"
+              className="relative p-1.5 sm:p-2 hover:bg-rose-50 rounded-full transition-colors group"
               aria-label="Cart"
             >
-              <ShoppingBag className="w-5 h-5 text-red-900 group-hover:text-rose-600 transition-colors" />
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-mahogany group-hover:text-rose-gold transition-colors" />
               {getTotalItems() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium animate-bounce">
+                <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 bg-rose-gold text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center font-medium animate-bounce">
                   {getTotalItems()}
                 </span>
               )}
@@ -152,31 +157,31 @@ const Header = () => {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen((open) => !open)}
-                  className="p-2 hover:bg-rose-50 rounded-full transition-colors group"
+                  className="p-1.5 sm:p-2 hover:bg-rose-50 rounded-full transition-colors group"
                   aria-label="Account menu"
                   aria-haspopup="true"
                   aria-expanded={isUserMenuOpen}
                 >
-                  <User className="w-5 h-5 text-red-900 group-hover:text-rose-600 transition-colors" />
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-mahogany group-hover:text-rose-gold transition-colors" />
                 </button>
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 opacity-100 scale-100 transition-all duration-200 ease-out">
-                    <div className="px-4 py-2 border-b border-gray-100 flex items-center gap-2">
-                      <span className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center text-white font-bold">
+                  <div className="absolute right-0 mt-2 sm:mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 opacity-100 scale-100 transition-all duration-200 ease-out">
+                    <div className="px-3 sm:px-4 py-2 border-b border-gray-100 flex items-center gap-2">
+                      <span className="w-6 h-6 sm:w-8 sm:h-8 bg-rose-gold rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                         {user.email?.charAt(0).toUpperCase()}
                       </span>
-                      <p className="text-sm font-medium text-red-900 truncate">{user.email}</p>
+                      <p className="text-xs sm:text-sm font-medium text-mahogany truncate">{user.email}</p>
                     </div>
                     <Link
                       to="/profile"
-                      className="block px-4 py-2 text-sm text-red-900 hover:bg-rose-50 transition-colors"
+                      className="block px-3 sm:px-4 py-2 text-xs sm:text-sm text-mahogany hover:bg-rose-50 transition-colors"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       My Profile
                     </Link>
                     <Link
                       to="/orders"
-                      className="block px-4 py-2 text-sm text-red-900 hover:bg-rose-50 transition-colors"
+                      className="block px-3 sm:px-4 py-2 text-xs sm:text-sm text-mahogany hover:bg-rose-50 transition-colors"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       My Orders
@@ -184,18 +189,18 @@ const Header = () => {
                     {isAdmin && (
                       <Link
                         to="/admin"
-                        className="block px-4 py-2 text-sm text-red-900 hover:bg-rose-50 transition-colors flex items-center gap-2"
+                        className="block px-3 sm:px-4 py-2 text-xs sm:text-sm text-mahogany hover:bg-rose-50 transition-colors flex items-center gap-2"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
-                        <Settings className="w-4 h-4" />
+                        <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                         Admin Panel
                       </Link>
                     )}
                     <button
                       onClick={handleSignOut}
-                      className="w-full text-left px-4 py-2 text-sm text-red-900 hover:bg-rose-50 transition-colors flex items-center gap-2"
+                      className="w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm text-mahogany hover:bg-rose-50 transition-colors flex items-center gap-2"
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
                       Sign Out
                     </button>
                   </div>
@@ -204,34 +209,34 @@ const Header = () => {
             ) : (
               <Link
                 to="/auth"
-                className="p-2 hover:bg-rose-50 rounded-full transition-colors group"
+                className="p-1.5 sm:p-2 hover:bg-rose-50 rounded-full transition-colors group"
                 aria-label="Sign in"
               >
-                <User className="w-5 h-5 text-red-900 group-hover:text-rose-600 transition-colors" />
+                <User className="w-4 h-4 sm:w-5 sm:h-5 text-mahogany group-hover:text-rose-gold transition-colors" />
               </Link>
             )}
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-2 text-red-900 hover:text-rose-600 transition-colors"
+              className="lg:hidden p-1.5 sm:p-2 text-mahogany hover:text-rose-gold transition-colors ml-1"
               aria-label="Open menu"
             >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
           </div>
         </div>
 
         {/* Mobile Search Bar */}
-        <div className="md:hidden pb-4">
+        <div className="md:hidden pb-3 sm:pb-4">
           <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
             <input
               type="text"
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-600 focus:border-transparent text-base"
+              className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent text-sm sm:text-base"
               aria-label="Search products"
             />
           </form>
@@ -245,14 +250,14 @@ const Header = () => {
               onClick={() => setIsMenuOpen(false)}
               aria-hidden="true"
             />
-            <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-2xl border-t border-rose-100 z-50 rounded-b-2xl transform translate-y-0 opacity-100 transition-all duration-200 ease-out">
-              <nav className="px-4 py-6 space-y-3 max-h-96 overflow-y-auto flex flex-col items-center">
+            <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-2xl border-t border-rose-100 z-50 rounded-b-2xl mx-2 sm:mx-0 transform translate-y-0 opacity-100 transition-all duration-200 ease-out">
+              <nav className="px-4 py-4 sm:py-6 space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto flex flex-col items-center">
                 {NAV_LINKS.map((link) => (
                   <Link
                     key={link.name}
                     to={link.path}
-                    className={`block w-full text-center py-3 text-lg font-semibold rounded-lg transition-colors duration-200 ${
-                      isActive(link.path) ? 'bg-rose-600 text-white' : 'text-red-900 hover:bg-rose-600 hover:text-white'
+                    className={`block w-full text-center py-2.5 sm:py-3 text-base sm:text-lg font-semibold rounded-lg transition-colors duration-200 ${
+                      isActive(link.path) ? 'bg-rose-gold text-white' : 'text-mahogany hover:bg-rose-gold hover:text-white'
                     }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -264,6 +269,13 @@ const Header = () => {
           </>
         )}
       </div>
+
+      <style jsx>{`
+        @media (min-width: 475px) {
+          .xs\\:inline { display: inline; }
+          .xs\\:hidden { display: none; }
+        }
+      `}</style>
     </header>
   );
 };
