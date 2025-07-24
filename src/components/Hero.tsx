@@ -1,7 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 
 const Hero = () => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+    setImageLoaded(false);
+  };
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background Pattern */}
@@ -61,11 +74,41 @@ const Hero = () => {
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-blush-pink to-rose-gold rounded-3xl transform rotate-6 opacity-20"></div>
             <div className="relative bg-white rounded-3xl overflow-hidden shadow-2xl">
-              <img
-                src="https://images.pexels.com/photos/6146970/pexels-photo-6146970.jpeg?auto=compress&cs=tinysrgb&w=800"
-                alt="Beautiful ethnic wear model"
-                className="w-full h-96 lg:h-[500px] object-cover"
-              />
+              {!imageError ? (
+                <>
+                  <img
+                    src="https://images.pexels.com/photos/6146970/pexels-photo-6146970.jpeg?auto=compress&cs=tinysrgb&w=800"
+                    alt="Beautiful ethnic wear model"
+                    className={`w-full h-96 lg:h-[500px] object-cover transition-opacity duration-300 ${
+                      imageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                  />
+                  {!imageLoaded && (
+                    <div className="w-full h-96 lg:h-[500px] bg-gradient-to-br from-blush-pink to-rose-gold opacity-20 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold mx-auto mb-4"></div>
+                        <p className="text-mahogany">Loading featured product...</p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="w-full h-96 lg:h-[500px] bg-gradient-to-br from-blush-pink to-rose-gold opacity-30 flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-mahogany mb-2">Featured Collection</h3>
+                    <p className="text-gray-600 text-sm">Exquisite ethnic wear crafted with love</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Featured Product Info - Always show */}
               <div className="absolute bottom-6 left-6 right-6 bg-white bg-opacity-95 backdrop-blur rounded-xl p-4">
                 <h3 className="font-semibold text-mahogany mb-1">Featured: Royal Silk Collection</h3>
                 <p className="text-sm text-gray-600">Handwoven silk sarees with gold thread work</p>
