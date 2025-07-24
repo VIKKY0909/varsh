@@ -1,8 +1,11 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import heroImg from "../../lib/5dec5227-cf34-4607-a33e-21c33efd7203_20250725_014719_0000.jpg";
+import { useNavigate } from 'react-router-dom';
 
 const Hero = () => {
+const navigate = useNavigate();
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background Pattern */}
@@ -31,18 +34,18 @@ const Hero = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-rose-gold text-white px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group">
+              <button onClick={() => navigate('/products')} className="bg-rose-gold text-white px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group">
                 Explore Collection
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               
-              <button className="border-2 border-rose-gold text-rose-gold px-8 py-4 rounded-lg font-semibold hover:bg-rose-gold hover:text-white transition-all duration-300">
+              <button onClick={() => navigate('/about')} className="border-2 border-rose-gold text-rose-gold px-8 py-4 rounded-lg font-semibold hover:bg-rose-gold hover:text-white transition-all duration-300">
                 Watch Our Story
               </button>
             </div>
             
             {/* Stats */}
-            <div className="flex gap-8 mt-12">
+{/*             <div className="flex gap-8 mt-12">
               <div>
                 <div className="text-3xl font-bold text-mahogany">10k+</div>
                 <div className="text-sm text-gray-500">Happy Customers</div>
@@ -56,7 +59,7 @@ const Hero = () => {
                 <div className="text-sm text-gray-500">Years of Craftsmanship</div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Right Content - Image */}
           <div className="relative">
@@ -72,7 +75,7 @@ const Hero = () => {
                 <p className="text-sm text-gray-600">Infuse elegance into your everyday wardrobe with our IndiRatri Cotton Kurti</p>
                 <div className="flex items-center justify-between mt-3">
                   <span className="text-rose-gold font-bold">From 449</span>
-                  <button className="text-sm text-rose-gold hover:text-mahogany transition-colors">
+                  <button onClick={() => navigate('/products')} className="text-sm text-rose-gold hover:text-mahogany transition-colors">
                     View Details →
                   </button>
                 </div>
