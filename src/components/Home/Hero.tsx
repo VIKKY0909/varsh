@@ -1,31 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import img from '../../lib/5dec5227-cf34-4607-a33e-21c33efd7203_20250725_014719_0000.jpg';
+import img from "../../lib/5dec5227-cf34-4607-a33e-21c33efd7203_20250725_014719_0000.jpg";
+
 const Hero = () => {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-
-  // Static featured product data
-  const featuredProduct = {
-    id: "1",
-    name: "IndiRatri",
-    description: "Infuse elegance",
-    price: 449,
-    original_price: 850,
-    image: img
-  };
-
-
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-    setImageError(false);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
-    setImageLoaded(false);
-  };
-
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background Pattern */}
@@ -85,55 +62,16 @@ const Hero = () => {
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-blush-pink to-rose-gold rounded-3xl transform rotate-6 opacity-20"></div>
             <div className="relative bg-white rounded-3xl overflow-hidden shadow-2xl">
-              {!imageError ? (
-                <>
-                  <img
-                    src={featuredProduct.image}
-                    alt={featuredProduct.name}
-                    className={`w-full h-96 lg:h-[500px] object-cover transition-opacity duration-300 ${
-                      imageLoaded ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    onLoad={handleImageLoad}
-                    onError={handleImageError}
-                  />
-                  {!imageLoaded && (
-                    <div className="w-full h-96 lg:h-[500px] bg-gradient-to-br from-blush-pink to-rose-gold opacity-20 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold mx-auto mb-4"></div>
-                        <p className="text-mahogany">Loading image...</p>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="w-full h-96 lg:h-[500px] bg-gradient-to-br from-blush-pink to-rose-gold opacity-30 flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <h3 className="font-semibold text-mahogany mb-2">Featured Collection</h3>
-                    <p className="text-gray-600 text-sm">Exquisite ethnic wear crafted with love</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Featured Product Info */}
+              <img
+                src= img
+                alt="Beautiful ethnic wear model"
+                className="w-full h-96 lg:h-[500px] object-cover"
+              />
               <div className="absolute bottom-6 left-6 right-6 bg-white bg-opacity-95 backdrop-blur rounded-xl p-4">
-                <h3 className="font-semibold text-mahogany mb-1">
-                  Featured: {featuredProduct.name}
-                </h3>
-                <p className="text-sm text-gray-600 line-clamp-2">
-                  {featuredProduct.description}
-                </p>
+                <h3 className="font-semibold text-mahogany mb-1">Featured: IndiRatri</h3>
+                <p className="text-sm text-gray-600">Infuse elegance into your everyday wardrobe with our IndiRatri Cotton Kurti</p>
                 <div className="flex items-center justify-between mt-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-rose-gold font-bold">₹{featuredProduct.price.toLocaleString()}</span>
-                    <span className="text-sm text-gray-500 line-through">
-                      ₹{featuredProduct.original_price.toLocaleString()}
-                    </span>
-                  </div>
+                  <span className="text-rose-gold font-bold">From 449</span>
                   <button className="text-sm text-rose-gold hover:text-mahogany transition-colors">
                     View Details →
                   </button>
