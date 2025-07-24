@@ -3,13 +3,6 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
-interface Category {
-  category: string;
-  count: number;
-  description?: string;
-  image?: string;
-}
-
 interface CategoryData {
   id: string;
   name: string;
@@ -24,94 +17,103 @@ const Categories = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Default category information for enriching the data
-  const categoryInfo = {
-    casual: {
-      name: "Casual Kurtis",
-      description: "",
-      image: ""
-    },
-    formal: {
-      name: "Formal Kurtis", 
-      description: "Professional and elegant",
-      image: ""
-    },
-    party: {
-      name: "Party Wear",
-      description: "Glamorous evening styles", 
-      image: ""
-    },
-    festive: {
-      name: "Festive Collection",
-      description: "Traditional celebration wear",
-      image: ""
-    }
-  };
-
-  // Fetch categories with product counts from backend
+  // Fetch categories and their counts from the backend
   const fetchCategories = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Get category counts from products table
-      const { data, error } = await supabase
+      // First, get all unique categories from products
+      const { data: categoryData, error: categoryError } = await supabase
         .from('products')
         .select('category')
-        .gt('stock_quantity', 0); // Only count in-stock products
+        .gt('stock_quantity', 0);
 
-      if (error) throw error;
+      if (categoryError) throw categoryError;
 
-      // Count products by category
-      const categoryCounts: { [key: string]: number } = {};
-      data?.forEach(product => {
-        const category = product.category?.toLowerCase();
-        if (category) {
-          categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+      // Get unique categories
+      const uniqueCategories = [...new Set(categoryData?.map(item => item.category).filter(Boolean))];
+
+      if (uniqueCategories.length === 0) {
+        setCategories([]);
+        return;
+      }
+
+      // Get sample images for each category (first product image from each category)
+      const categoryPromises = uniqueCategories.map(async (category) => {
+        try {
+          // Get count for this category
+          const { count, error: countError } = await supabase
+            .from('products')
+            .select('*', { count: 'exact', head: true })
+            .eq('category', category)
+            .gt('stock_quantity', 0);
+
+          if (countError) throw countError;
+
+          // Get a sample image from this category
+          const { data: sampleProduct, error: imageError } = await supabase
+            .from('products')
+            .select('images, name')
+            .eq('category', category)
+            .gt('stock_quantity', 0)
+            .limit(1)
+            .single();
+
+          if (imageError) {
+            console.warn(`No sample image found for category: ${category}`);
+          }
+
+          // Generate category display name and description
+          const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+          const descriptions: { [key: string]: string } = {
+            'casual': 'Comfortable everyday wear',
+            'formal': 'Professional and elegant',
+            'party': 'Glamorous evening styles',
+            'festive': 'Traditional celebration wear',
+            'ethnic': 'Traditional ethnic wear',
+            'western': 'Modern western styles',
+            'wedding': 'Special occasion wear',
+            'office': 'Professional workplace attire'
+          };
+
+          return {
+            id: category,
+            name: `${categoryName} Kurtis`,
+            description: descriptions[category.toLowerCase()] || `Beautiful ${category.toLowerCase()} collection`,
+            image: (sampleProduct?.images && sampleProduct.images.length > 0) 
+              ? sampleProduct.images[0] 
+              : "https://images.pexels.com/photos/6311612/pexels-photo-6311612.jpeg?auto=compress&cs=tinysrgb&w=600",
+            path: `/products?category=${category}`,
+            count: count ? `${count}+ Design${count !== 1 ? 's' : ''}` : "Available"
+          };
+        } catch (error) {
+          console.error(`Error processing category ${category}:`, error);
+          return {
+            id: category,
+            name: `${category.charAt(0).toUpperCase() + category.slice(1)} Kurtis`,
+            description: `Beautiful ${category.toLowerCase()} collection`,
+            image: "https://images.pexels.com/photos/6311612/pexels-photo-6311612.jpeg?auto=compress&cs=tinysrgb&w=600",
+            path: `/products?category=${category}`,
+            count: "Available"
+          };
         }
       });
 
-      // Create category data with counts and additional info
-      const categoryData: CategoryData[] = Object.entries(categoryCounts)
-        .map(([categoryKey, count]) => {
-          const info = categoryInfo[categoryKey as keyof typeof categoryInfo];
-          if (!info) return null; // Skip unknown categories
-          
-          return {
-            id: categoryKey,
-            name: info.name,
-            description: info.description,
-            image: info.image,
-            path: `/products?category=${categoryKey}`,
-            count: `${count}+ Design${count !== 1 ? 's' : ''}`
-          };
-        })
-        .filter(Boolean) as CategoryData[];
-
-      // Sort categories by count (descending)
-      categoryData.sort((a, b) => {
-        const aCount = parseInt(a.count);
-        const bCount = parseInt(b.count);
+      const categoriesWithData = await Promise.all(categoryPromises);
+      
+      // Sort by count (extract number from string for proper sorting)
+      categoriesWithData.sort((a, b) => {
+        const aCount = parseInt(a.count) || 0;
+        const bCount = parseInt(b.count) || 0;
         return bCount - aCount;
       });
 
-      setCategories(categoryData);
+      setCategories(categoriesWithData);
 
     } catch (error) {
       console.error('Error fetching categories:', error);
-      setError('Failed to load categories');
-      
-      // Fallback to default categories without counts
-      const fallbackCategories: CategoryData[] = Object.entries(categoryInfo).map(([key, info]) => ({
-        id: key,
-        name: info.name,
-        description: info.description,
-        image: info.image,
-        path: `/products?category=${key}`,
-        count: "Available"
-      }));
-      
-      setCategories(fallbackCategories);
+      setError('Failed to load categories. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -135,9 +137,9 @@ const Categories = () => {
             {[...Array(4)].map((_, index) => (
               <div key={index} className="animate-pulse bg-white rounded-2xl overflow-hidden shadow-lg">
                 <div className="bg-gray-200 h-48 sm:h-56 lg:h-64"></div>
-                <div className="p-4 sm:p-6">
-                  <div className="bg-gray-200 h-6 rounded mb-2"></div>
-                  <div className="bg-gray-200 h-4 rounded mb-3"></div>
+                <div className="p-4 sm:p-6 space-y-3">
+                  <div className="bg-gray-200 h-6 rounded"></div>
+                  <div className="bg-gray-200 h-4 rounded"></div>
                   <div className="bg-gray-200 h-4 w-32 rounded"></div>
                 </div>
               </div>
