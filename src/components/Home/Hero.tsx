@@ -58,8 +58,8 @@ const navigate = useNavigate();
                 <div className="text-3xl font-bold text-mahogany">25+</div>
                 <div className="text-sm text-gray-500">Years of Craftsmanship</div>
               </div>
-            </div>
-          </div> */}
+            </div> */}
+          </div>
 
           {/* Right Content - Image */}
           <div className="relative">
