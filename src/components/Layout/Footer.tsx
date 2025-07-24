@@ -1,6 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, MapPin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
+import { Mail, MapPin, Instagram } from 'lucide-react';
 
 const Footer = () => {
   const quickLinks = [
@@ -17,13 +16,21 @@ const Footer = () => {
     { name: 'Festive Collection', path: '/products?category=festive' },
   ];
 
+  // Demo Link component for display purposes
+  const Link = ({ to, children, className }) => (
+    <a href={to} className={className}>
+      {children}
+    </a>
+  );
+
   return (
     <footer className="bg-mahogany text-white">
       
       {/* Main Footer */}
-      <div className="py-12 sm:py-16">
+      <div className="py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-12">
+            
             {/* Brand Info */}
             <div className="lg:col-span-1">
               <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-blush-pink">
@@ -34,7 +41,6 @@ const Footer = () => {
               </p>
               
               <div className="space-y-3">
-              
                 <div className="flex items-center gap-3">
                   <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-rose-gold flex-shrink-0" />
                   <span className="text-gray-300 text-sm sm:text-base break-all">varshethnicwears@gmail.com</span>
@@ -85,14 +91,15 @@ const Footer = () => {
               <h4 className="text-lg font-semibold mb-4 sm:mb-6 text-rose-gold">Connect With Us</h4>
               
               <div className="flex gap-3 sm:gap-4 mb-6 sm:mb-8">
-                
-                <a href="https://instagram.com/varshethnicwears" className="bg-rose-gold p-2 sm:p-3 rounded-full hover:bg-copper transition-all duration-300 transform hover:scale-110">
+                <a 
+                  href="https://instagram.com/varshethnicwears" 
+                  className="bg-rose-gold p-2 sm:p-3 rounded-full hover:bg-copper transition-all duration-300 transform hover:scale-110"
+                >
                   <Instagram className="w-4 h-4 sm:w-5 sm:h-5" />
                 </a>
               </div>
 
               <div className="space-y-4">
-                
                 <div>
                   <h5 className="font-semibold text-blush-pink mb-2 text-sm sm:text-base">Secure Payments</h5>
                   <p className="text-xs sm:text-sm text-gray-300">We accept all major credit cards, UPI, and digital wallets</p>
