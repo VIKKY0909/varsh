@@ -59,21 +59,21 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur shadow-md border-b border-rose-100">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-rose-50 to-pink-50 text-center py-1.5 sm:py-2 px-2 text-xs sm:text-sm text-mahogany">
+      <div className="bg-gradient-to-r from-rose-50 to-pink-50 text-center py-2 px-4 text-xs sm:text-sm text-mahogany">
         <span className="hidden sm:inline">Free shipping on orders above 999 | Authentic handcrafted ethnic wear</span>
         <span className="sm:hidden">Free shipping above ₹999</span>
       </div>
       
       {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20 relative">
           {/* Logo/Brand */}
-          <Link to="/" className="flex-shrink-0 min-w-0">
-            <h1 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-mahogany tracking-wide">
-              <span className="hidden xs:inline">Varsh </span>
+          <Link to="/" className="flex-shrink-0">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-mahogany tracking-wide">
+              <span className="hidden sm:inline">Varsh </span>
               <span className="text-rose-gold">
-                <span className="xs:hidden">VEW</span>
-                <span className="hidden xs:inline">Ethnic Wears</span>
+                <span className="sm:hidden">VEW</span>
+                <span className="hidden sm:inline">Ethnic Wears</span>
               </span>
             </h1>
           </Link>
@@ -102,7 +102,7 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Search Bar - Desktop Only */}
+          {/* Search Bar - Desktop */}
           <div className="hidden md:flex flex-1 max-w-xs lg:max-w-sm xl:max-w-md mx-4 lg:mx-8">
             <form onSubmit={handleSearch} className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 lg:w-5 lg:h-5" />
@@ -120,7 +120,7 @@ const Header = () => {
           </div>
 
           {/* Right Icons */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
             {/* Mobile Search */}
             <button
               className="md:hidden p-1.5 sm:p-2 hover:bg-rose-50 rounded-full transition-colors"
@@ -165,7 +165,7 @@ const Header = () => {
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-mahogany group-hover:text-rose-gold transition-colors" />
                 </button>
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 sm:mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 opacity-100 scale-100 transition-all duration-200 ease-out">
+                  <div className="absolute right-0 mt-2 sm:mt-3 w-48 sm:w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 animate-fade-in">
                     <div className="px-3 sm:px-4 py-2 border-b border-gray-100 flex items-center gap-2">
                       <span className="w-6 h-6 sm:w-8 sm:h-8 bg-rose-gold rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                         {user.email?.charAt(0).toUpperCase()}
@@ -246,11 +246,11 @@ const Header = () => {
         {isMenuOpen && (
           <>
             <div
-              className="fixed inset-0 bg-black bg-opacity-30 z-40 opacity-100 transition-opacity duration-200"
+              className="fixed inset-0 bg-black bg-opacity-30 z-40 animate-fade-in"
               onClick={() => setIsMenuOpen(false)}
               aria-hidden="true"
             />
-            <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-2xl border-t border-rose-100 z-50 rounded-b-2xl mx-2 sm:mx-0 transform translate-y-0 opacity-100 transition-all duration-200 ease-out">
+            <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-2xl border-t border-rose-100 z-50 animate-slide-down rounded-b-2xl mx-4 sm:mx-0">
               <nav className="px-4 py-4 sm:py-6 space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto flex flex-col items-center">
                 {NAV_LINKS.map((link) => (
                   <Link
@@ -269,13 +269,6 @@ const Header = () => {
           </>
         )}
       </div>
-
-      <style jsx>{`
-        @media (min-width: 475px) {
-          .xs\\:inline { display: inline; }
-          .xs\\:hidden { display: none; }
-        }
-      `}</style>
     </header>
   );
 };
