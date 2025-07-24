@@ -128,7 +128,7 @@ const Hero = () => {
             
             <div className="flex flex-col sm:flex-row gap-4">
   <button
-    onClick={() => navigate('/collection')}
+    onClick={() => navigate('/products')}
     className="bg-rose-gold text-white px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group"
   >
     Explore Collection
@@ -136,7 +136,7 @@ const Hero = () => {
   </button>
 
   <button
-    onClick={() => navigate('/story')}
+    onClick={() => navigate('/about')}
     className="border-2 border-rose-gold text-rose-gold px-8 py-4 rounded-lg font-semibold hover:bg-rose-gold hover:text-white transition-all duration-300"
   >
     Watch Our Story
