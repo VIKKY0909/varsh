@@ -415,14 +415,14 @@ const ProductDetails = () => {
               
               <h1 className="text-3xl font-bold text-mahogany mb-4">{product.name}</h1>
               
-              <div className="flex items-center gap-2 mb-4">
+{/*               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
                   ))}
                 </div>
                 <span className="text-sm text-gray-600">(4.8) • 124 reviews</span>
-              </div>
+              </div> */}
 
               <div className="flex items-center gap-4 mb-6">
                 <span className="text-3xl font-bold text-rose-gold">₹{product.price.toLocaleString()}</span>
