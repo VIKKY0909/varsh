@@ -726,10 +726,10 @@ const Products = () => {
                       <div className="p-6 flex-1">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm text-rose-gold font-medium capitalize">{product.category}</span>
-                          <div className="flex items-center">
+{/*                           <div className="flex items-center">
                             <Star className="w-4 h-4 text-yellow-400 fill-current" />
                             <span className="text-sm text-gray-500 ml-1">{product.rating || 4.8}</span>
-                          </div>
+                          </div> */}
                         </div>
                         
                         <h3 className="text-lg font-bold text-mahogany mb-2 group-hover:text-rose-gold transition-colors line-clamp-2">
