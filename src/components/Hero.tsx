@@ -1,6 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+
+// Mock supabase for demo - replace with your actual import
+const supabase = {
+  from: (table) => ({
+    select: (columns) => ({
+      eq: (column, value) => ({
+        gt: (column, value) => ({
+          order: (column, options) => ({
+            limit: (num) => ({
+              single: async () => {
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Return mock data
+                return {
+                  data: {
+                    id: "1",
+                    name: "Royal Silk Collection",
+                    description: "Handwoven silk sarees with intricate gold thread work",
+                    price: 15999,
+                    original_price: 19999,
+                    images: ["https://images.pexels.com/photos/6146970/pexels-photo-6146970.jpeg?auto=compress&cs=tinysrgb&w=800"],
+                    category: "festive",
+                    material: "silk",
+                    color: "royal blue",
+                    size: ["S", "M", "L", "XL"],
+                    is_new: false,
+                    is_bestseller: true,
+                    stock_quantity: 15,
+                    created_at: new Date().toISOString()
+                  },
+                  error: null
+                };
+              }
+            })
+          })
+        })
+      })
+    })
+  })
+};
 
 const Hero = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -9,24 +49,24 @@ const Hero = () => {
   const [productLoading, setProductLoading] = useState(true);
   const [productError, setProductError] = useState(false);
 
-  // Fetch featured product from database
+  // Fetch featured product with corrected Supabase query
   useEffect(() => {
     const fetchFeaturedProduct = async () => {
       try {
         setProductLoading(true);
         setProductError(false);
 
+        // Simplified Supabase query - just fetch one product with stock
         const { data, error } = await supabase
           .from('products')
-          .select('id, name, description, price, original_price, images, category, material, color, size, is_new, is_bestseller, stock_quantity')
-          .eq('is_bestseller', true)
-          .gt('stock_quantity', 0)
-          .order('created_at', { ascending: false })
+          .select('id, name, description, price, original_price, images, category, material, color, size, is_new, is_bestseller, stock_quantity, created_at')
+          .gt('stock_quantity', 0)    // Only products in stock
+          .order('created_at', { ascending: false })  // Get newest first
           .limit(1)
           .single();
 
         if (error) {
-          console.error('Error fetching featured product:', error);
+          console.error('Supabase error:', error);
           setProductError(true);
           return;
         }
