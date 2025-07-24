@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
-
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 // Mock supabase for demo - replace with your actual import
 const supabase = {
   from: (table) => ({
@@ -125,14 +125,17 @@ const Hero = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
+              <Link to = "/products">
               <button className="bg-rose-gold text-white px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group">
                 Explore Collection
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              
+              </Link>
+              <Link to="/about"
               <button className="border-2 border-rose-gold text-rose-gold px-8 py-4 rounded-lg font-semibold hover:bg-rose-gold hover:text-white transition-all duration-300">
                 Watch Our Story
               </button>
+              </Link>
             </div>
             
             {/* Stats */}
