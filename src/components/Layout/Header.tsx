@@ -70,11 +70,7 @@ const Header = () => {
           {/* Logo/Brand */}
           <Link to="/" className="flex-shrink-0">
             <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-mahogany tracking-wide">
-              <span className="hidden sm:inline">Varsh </span>
-              <span className="text-rose-gold">
-                <span className="sm:hidden">VEW</span>
-                <span className="hidden sm:inline">Ethnic Wears</span>
-              </span>
+              Varsh <span className="text-rose-gold">Ethnic Wears</span>
             </h1>
           </Link>
 
