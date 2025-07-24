@@ -28,7 +28,7 @@ const Categories = () => {
   const categoryInfo = {
     casual: {
       name: "Casual Kurtis",
-      description: "Comfortable everyday wear",
+      description: "",
       image: ""
     },
     formal: {
