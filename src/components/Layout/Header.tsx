@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Menu, X, ShoppingBag, Search, User, Heart, LogOut, Settings } from 'lucide-react';
-
+import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext';
 const NAV_LINKS = [
   { name: 'Home', path: '/' },
   { name: 'About Us', path: '/about' },
@@ -15,8 +16,8 @@ const Header = () => {
   const userMenuRef = useRef(null);
 
   // Mock data for demo
-  const user = { email: 'demo@example.com' };
-  const getTotalItems = () => 3;
+
+const { getTotalItems } = useCart();
 
   // Demo Link component
   const Link = ({ to, children, className, onClick, ...props }) => (
