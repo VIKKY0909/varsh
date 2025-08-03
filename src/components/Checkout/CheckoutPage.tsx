@@ -111,7 +111,7 @@ const CheckoutPage = () => {
 
     setLoading(true);
     try {
-      // Create order
+      // Create order in Supabase first
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -285,6 +285,43 @@ const CheckoutPage = () => {
                   paymentMethod={paymentMethod}
                   onPaymentMethodChange={setPaymentMethod}
                   total={total}
+                  customerInfo={{
+                    name: selectedAddress?.full_name || '',
+                    email: user?.email || '',
+                    phone: selectedAddress?.phone || '',
+                    address: selectedAddress ? `${selectedAddress.address_line_1}, ${selectedAddress.city}, ${selectedAddress.state}` : ''
+                  }}
+                  orderItems={items.map(item => ({
+                    name: item.product.name,
+                    quantity: item.quantity,
+                    price: item.product.price
+                  }))}
+                  onPaymentSuccess={async (paymentId, orderId) => {
+                    try {
+                      // Update order with payment information
+                      const { error } = await supabase
+                        .rpc('update_order_payment_status', {
+                          order_uuid: orderId,
+                          razorpay_order_id_param: orderId,
+                          razorpay_payment_id_param: paymentId,
+                          payment_method_param: paymentMethod,
+                          payment_status_param: 'paid'
+                        });
+
+                      if (error) {
+                        console.error('Error updating payment status:', error);
+                      }
+
+                      // Continue to next step
+                      nextStep();
+                    } catch (error) {
+                      console.error('Payment success handling error:', error);
+                      nextStep(); // Continue anyway
+                    }
+                  }}
+                  onPaymentFailure={(error) => {
+                    alert(`Payment failed: ${error}`);
+                  }}
                 />
               )}
 
@@ -297,6 +334,7 @@ const CheckoutPage = () => {
                   onOrderNotesChange={setOrderNotes}
                   subtotal={subtotal}
                   shippingCost={shippingCost}
+                  taxAmount={0}
                   total={total}
                 />
               )}

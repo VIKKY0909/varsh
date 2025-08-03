@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import OrderManagement from './OrderManagement';
+import AdminOrders from './AdminOrders';
 
 interface Product {
   id: string;
@@ -70,6 +70,7 @@ interface Order {
     quantity: number;
     size: string;
     price: number;
+    product_id: string;
     product: {
       name: string;
       images: string[];
@@ -191,8 +192,16 @@ const AdminDashboard = () => {
         .select(`
           *,
           order_items(
-            *,
-            product:products(id, name, images)
+            id,
+            quantity,
+            size,
+            price,
+            product_id,
+            products!order_items_product_id_fkey(
+              id,
+              name,
+              images
+            )
           )
         `)
         .order('created_at', { ascending: false });
@@ -763,11 +772,7 @@ const AdminDashboard = () => {
 
         {/* Orders Management */}
         {activeTab === 'orders' && (
-          <OrderManagement
-            orders={orders}
-            onUpdateStatus={updateOrderStatus}
-            onDeleteOrder={deleteOrder}
-          />
+          <AdminOrders />
         )}
 
         {/* Users Management */}

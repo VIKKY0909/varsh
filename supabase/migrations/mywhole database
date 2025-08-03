@@ -91,6 +91,8 @@ CREATE TABLE public.orders (
   estimated_delivery timestamp with time zone,
   tracking_number text,
   canceled boolean DEFAULT false,
+  razorpay_order_id text,
+  razorpay_payment_id text,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
@@ -124,8 +126,8 @@ CREATE TABLE public.product_reviews (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT product_reviews_pkey PRIMARY KEY (id),
   CONSTRAINT product_reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
-  CONSTRAINT product_reviews_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id),
-  CONSTRAINT product_reviews_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id)
+  CONSTRAINT product_reviews_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id),
+  CONSTRAINT product_reviews_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
 );
 CREATE TABLE public.products (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -159,6 +161,7 @@ CREATE TABLE public.user_profiles (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   is_admin boolean DEFAULT false,
+  email text,
   CONSTRAINT user_profiles_pkey PRIMARY KEY (id),
   CONSTRAINT user_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
@@ -170,8 +173,8 @@ CREATE TABLE public.wishlist (
   notify_on_stock boolean DEFAULT true,
   notify_on_price_drop boolean DEFAULT true,
   CONSTRAINT wishlist_pkey PRIMARY KEY (id),
-  CONSTRAINT wishlist_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id),
-  CONSTRAINT wishlist_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT wishlist_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT wishlist_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id)
 );
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
@@ -474,15 +477,6 @@ CREATE TABLE storage.s3_multipart_uploads_parts (
   CONSTRAINT s3_multipart_uploads_parts_pkey PRIMARY KEY (id),
   CONSTRAINT s3_multipart_uploads_parts_bucket_id_fkey FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id),
   CONSTRAINT s3_multipart_uploads_parts_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES storage.s3_multipart_uploads(id)
-);
--- WARNING: This schema is for context only and is not meant to be run.
--- Table order and constraints may not be valid for execution.
-
-CREATE TABLE supabase_migrations.schema_migrations (
-  version text NOT NULL,
-  statements ARRAY,
-  name text,
-  CONSTRAINT schema_migrations_pkey PRIMARY KEY (version)
 );
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
