@@ -178,7 +178,7 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
     }
   };
 
-  // Fetch orders
+  // Fetch orders using the admin_orders_flat view
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -190,9 +190,9 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
           throw new Error('Supabase client is not properly configured');
         }
         
-        // First, fetch orders with basic information
+        // Use the admin_orders_flat view to fetch all data in one query
         let query = supabase
-          .from('orders')
+          .from('admin_orders_flat')
           .select('*')
           .order('created_at', { ascending: false });
 
@@ -202,87 +202,24 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
         }
 
         if (searchTerm) {
-          query = query.or(`order_number.ilike.%${searchTerm}%`);
+          query = query.or(`order_number.ilike.%${searchTerm}%,user_full_name.ilike.%${searchTerm}%,user_email.ilike.%${searchTerm}%`);
         }
 
-        const { data: ordersData, error: ordersError } = await query;
+        const { data: flatOrdersData, error: ordersError } = await query;
 
         if (ordersError) {
           console.error('Orders fetch error:', ordersError);
           throw ordersError;
         }
 
-        if (!ordersData || ordersData.length === 0) {
+        if (!flatOrdersData || flatOrdersData.length === 0) {
           setOrders([]);
           return;
         }
 
-        // Fetch order items for each order
-        const ordersWithItems = await Promise.all(
-          ordersData.map(async (order) => {
-            try {
-              // Fetch order items
-              const { data: itemsData, error: itemsError } = await supabase
-                .from('order_items')
-                .select(`
-                  *,
-                  products (
-                    id,
-                    name,
-                    price,
-                    images
-                  )
-                `)
-                .eq('order_id', order.id);
-
-              if (itemsError) {
-                console.error('Order items fetch error:', itemsError);
-              }
-
-              // Fetch user profile
-              const { data: userData, error: userError } = await supabase
-                .from('user_profiles')
-                .select('full_name, email, phone, gender, date_of_birth')
-                .eq('user_id', order.user_id)
-                .single();
-
-              if (userError) {
-                console.error('User profile fetch error:', userError);
-              }
-
-              return {
-                ...order,
-                order_items: itemsData || [],
-                user: {
-                  email: userData?.email || '',
-                  user_profiles: {
-                    full_name: userData?.full_name || '',
-                    phone: userData?.phone || '',
-                    gender: userData?.gender || '',
-                    date_of_birth: userData?.date_of_birth || ''
-                  }
-                }
-              };
-            } catch (err) {
-              console.error('Error fetching order details:', err);
-              return {
-                ...order,
-                order_items: [],
-                user: {
-                  email: '',
-                  user_profiles: {
-                    full_name: '',
-                    phone: '',
-                    gender: '',
-                    date_of_birth: ''
-                  }
-                }
-              };
-            }
-          })
-        );
-
-        setOrders(ordersWithItems);
+        // Group the flat data into structured orders using the existing function
+        const groupedOrders = groupOrders(flatOrdersData);
+        setOrders(groupedOrders);
       } catch (err) {
         console.error('Fetch orders error:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch orders. Please check your Supabase configuration.');
@@ -358,54 +295,40 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
     return (
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
         <p>{error}</p>
-        <button
-          onClick={() => {
-            // Re-fetch orders on retry
-            const fetchOrders = async () => {
-              try {
-                setLoading(true);
-                setError(null);
-                let query = supabase
-                  .from('orders')
-                  .select(`
-                    *,
-                    order_items (
-                      *,
-                      product:products (
-                        id,
-                        name,
-                        price,
-                        images
-                      )
-                    ),
-                    user:user_profiles (
-                      full_name,
-                      email
-                    )
-                  `)
-                  .order('created_at', { ascending: false });
+                 <button
+           onClick={() => {
+             // Re-fetch orders on retry
+             const fetchOrders = async () => {
+               try {
+                 setLoading(true);
+                 setError(null);
+                 let query = supabase
+                   .from('admin_orders_flat')
+                   .select('*')
+                   .order('created_at', { ascending: false });
 
-                if (statusFilter !== 'all') {
-                  query = query.eq('status', statusFilter);
-                }
+                 if (statusFilter !== 'all') {
+                   query = query.eq('status', statusFilter);
+                 }
 
-                if (searchTerm) {
-                  query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
-                }
+                 if (searchTerm) {
+                   query = query.or(`order_number.ilike.%${searchTerm}%,user_full_name.ilike.%${searchTerm}%,user_email.ilike.%${searchTerm}%`);
+                 }
 
-                const { data, error: ordersError } = await query;
+                 const { data: flatOrdersData, error: ordersError } = await query;
 
-                if (ordersError) throw ordersError;
+                 if (ordersError) throw ordersError;
 
-                setOrders(data || []);
-              } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to fetch orders');
-              } finally {
-                setLoading(false);
-              }
-            };
-            fetchOrders();
-          }}
+                 const groupedOrders = groupOrders(flatOrdersData || []);
+                 setOrders(groupedOrders);
+               } catch (err) {
+                 setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+               } finally {
+                 setLoading(false);
+               }
+             };
+             fetchOrders();
+           }}
           className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
         >
           Retry
@@ -418,115 +341,52 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
     <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <h2 className="text-xl font-bold">Order Management</h2>
-        <button
-          onClick={() => {
-            const fetchOrders = async () => {
-              try {
-                setLoading(true);
-                setError(null);
-                
-                // First, fetch orders with basic information
-                let query = supabase
-                  .from('orders')
-                  .select('*')
-                  .order('created_at', { ascending: false });
+                 <button
+           onClick={() => {
+             const fetchOrders = async () => {
+               try {
+                 setLoading(true);
+                 setError(null);
+                 
+                 // Use the admin_orders_flat view to fetch all data in one query
+                 let query = supabase
+                   .from('admin_orders_flat')
+                   .select('*')
+                   .order('created_at', { ascending: false });
 
-                // Apply filters
-                if (statusFilter !== 'all') {
-                  query = query.eq('status', statusFilter);
-                }
+                 // Apply filters
+                 if (statusFilter !== 'all') {
+                   query = query.eq('status', statusFilter);
+                 }
 
-                if (searchTerm) {
-                  query = query.or(`order_number.ilike.%${searchTerm}%`);
-                }
+                 if (searchTerm) {
+                   query = query.or(`order_number.ilike.%${searchTerm}%,user_full_name.ilike.%${searchTerm}%,user_email.ilike.%${searchTerm}%`);
+                 }
 
-                const { data: ordersData, error: ordersError } = await query;
+                 const { data: flatOrdersData, error: ordersError } = await query;
 
-                if (ordersError) {
-                  console.error('Orders fetch error:', ordersError);
-                  throw ordersError;
-                }
+                 if (ordersError) {
+                   console.error('Orders fetch error:', ordersError);
+                   throw ordersError;
+                 }
 
-                if (!ordersData || ordersData.length === 0) {
-                  setOrders([]);
-                  return;
-                }
+                 if (!flatOrdersData || flatOrdersData.length === 0) {
+                   setOrders([]);
+                   return;
+                 }
 
-                // Fetch order items for each order
-                const ordersWithItems = await Promise.all(
-                  ordersData.map(async (order) => {
-                    try {
-                      // Fetch order items
-                      const { data: itemsData, error: itemsError } = await supabase
-                        .from('order_items')
-                        .select(`
-                          *,
-                          products (
-                            id,
-                            name,
-                            price,
-                            images
-                          )
-                        `)
-                        .eq('order_id', order.id);
-
-                      if (itemsError) {
-                        console.error('Order items fetch error:', itemsError);
-                      }
-
-                      // Fetch user profile
-                      const { data: userData, error: userError } = await supabase
-                        .from('user_profiles')
-                        .select('full_name, email, phone, gender, date_of_birth')
-                        .eq('user_id', order.user_id)
-                        .single();
-
-                      if (userError) {
-                        console.error('User profile fetch error:', userError);
-                      }
-
-                      return {
-                        ...order,
-                        order_items: itemsData || [],
-                        user: {
-                          email: userData?.email || '',
-                          user_profiles: {
-                            full_name: userData?.full_name || '',
-                            phone: userData?.phone || '',
-                            gender: userData?.gender || '',
-                            date_of_birth: userData?.date_of_birth || ''
-                          }
-                        }
-                      };
-                    } catch (err) {
-                      console.error('Error fetching order details:', err);
-                      return {
-                        ...order,
-                        order_items: [],
-                        user: {
-                          email: '',
-                          user_profiles: {
-                            full_name: '',
-                            phone: '',
-                            gender: '',
-                            date_of_birth: ''
-                          }
-                        }
-                      };
-                    }
-                  })
-                );
-
-                setOrders(ordersWithItems);
-              } catch (err) {
-                console.error('Fetch orders error:', err);
-                setError(err instanceof Error ? err.message : 'Failed to fetch orders');
-              } finally {
-                setLoading(false);
-              }
-            };
-            fetchOrders();
-          }}
+                 // Group the flat data into structured orders
+                 const groupedOrders = groupOrders(flatOrdersData);
+                 setOrders(groupedOrders);
+               } catch (err) {
+                 console.error('Fetch orders error:', err);
+                 setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+               } finally {
+                 setLoading(false);
+               }
+             };
+             fetchOrders();
+           }}
           disabled={loading}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 w-full sm:w-auto"
         >
@@ -566,53 +426,39 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
           <p className="text-gray-500 text-lg">
             {orders.length === 0 ? 'No orders found' : 'No orders match your search criteria'}
           </p>
-          <button
-            onClick={() => {
-              const fetchOrders = async () => {
-                try {
-                  setLoading(true);
-                  setError(null);
-                  let query = supabase
-                    .from('orders')
-                    .select(`
-                      *,
-                      order_items (
-                        *,
-                        product:products (
-                          id,
-                          name,
-                          price,
-                          images
-                        )
-                      ),
-                      user:user_profiles (
-                        full_name,
-                        email
-                      )
-                    `)
-                    .order('created_at', { ascending: false });
+                     <button
+             onClick={() => {
+               const fetchOrders = async () => {
+                 try {
+                   setLoading(true);
+                   setError(null);
+                   let query = supabase
+                     .from('admin_orders_flat')
+                     .select('*')
+                     .order('created_at', { ascending: false });
 
-                  if (statusFilter !== 'all') {
-                    query = query.eq('status', statusFilter);
-                  }
+                   if (statusFilter !== 'all') {
+                     query = query.eq('status', statusFilter);
+                   }
 
-                  if (searchTerm) {
-                    query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
-                  }
+                   if (searchTerm) {
+                     query = query.or(`order_number.ilike.%${searchTerm}%,user_full_name.ilike.%${searchTerm}%,user_email.ilike.%${searchTerm}%`);
+                   }
 
-                  const { data, error: ordersError } = await query;
+                   const { data: flatOrdersData, error: ordersError } = await query;
 
-                  if (ordersError) throw ordersError;
+                   if (ordersError) throw ordersError;
 
-                  setOrders(data || []);
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : 'Failed to fetch orders');
-                } finally {
-                  setLoading(false);
-                }
-              };
-              fetchOrders();
-            }}
+                   const groupedOrders = groupOrders(flatOrdersData || []);
+                   setOrders(groupedOrders);
+                 } catch (err) {
+                   setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+                 } finally {
+                   setLoading(false);
+                 }
+               };
+               fetchOrders();
+             }}
             className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
             Refresh Orders
