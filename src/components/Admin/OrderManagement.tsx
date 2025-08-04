@@ -76,7 +76,7 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
 
     try {
       const { data: ordersData, error: ordersError } = await supabase
-        .from('admin_orders_flat_view')
+        .from('admin_orders_flat')
         .select('*')
         .order('created_at', { ascending: false });
 
