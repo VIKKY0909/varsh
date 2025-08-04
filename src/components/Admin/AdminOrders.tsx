@@ -273,10 +273,11 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
 
   // Filter orders based on search term and status
   const filteredOrders = orders.filter(order => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
-      order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.user?.user_profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      (order.order_number?.toLowerCase() || '').includes(searchLower) ||
+      (order.user?.user_profiles?.full_name?.toLowerCase() || '').includes(searchLower) ||
+      (order.user?.email?.toLowerCase() || '').includes(searchLower);
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
@@ -596,65 +597,67 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
         </div>
       )}
 
-      {/* Order Detail Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl relative">
-            <button
-              className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
-              onClick={() => setSelectedOrder(null)}
-            >
-              <X className="w-6 h-6" />
-            </button>
+             {/* Order Detail Modal */}
+       {selectedOrder && (
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+           <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl relative">
+             <button
+               className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
+               onClick={() => setSelectedOrder(null)}
+             >
+               <X className="w-6 h-6" />
+             </button>
 
-            <h3 className="text-xl md:text-2xl font-bold mb-6">Order Details</h3>
+             <h3 className="text-xl md:text-2xl font-bold mb-6">
+               Order Details - {selectedOrder.order_number || 'Unknown Order'}
+             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <h4 className="font-semibold mb-3">Order Information</h4>
-                <div className="space-y-2">
-                  <p><strong>Order #:</strong> {selectedOrder.order_number}</p>
-                  <p><strong>Date:</strong> {formatDate(selectedOrder.created_at)}</p>
-                  <p><strong>Status:</strong>
-                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                      selectedOrder.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                      selectedOrder.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                      selectedOrder.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {selectedOrder.status.toUpperCase()}
-                    </span>
-                  </p>
-                  <p><strong>Payment Status:</strong> 
-                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                      selectedOrder.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-                      selectedOrder.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {selectedOrder.payment_status?.toUpperCase() || 'PENDING'}
-                    </span>
-                  </p>
-                  {selectedOrder.razorpay_order_id && (
-                    <p><strong>Razorpay Order ID:</strong> {selectedOrder.razorpay_order_id}</p>
-                  )}
-                  {selectedOrder.razorpay_payment_id && (
-                    <p><strong>Razorpay Payment ID:</strong> {selectedOrder.razorpay_payment_id}</p>
-                  )}
-                  {selectedOrder.payment_timestamp && (
-                    <p><strong>Payment Time:</strong> {formatDateTime(selectedOrder.payment_timestamp)}</p>
-                  )}
-                  {selectedOrder.estimated_delivery_day && (
-                    <p><strong>Estimated Delivery:</strong> {selectedOrder.estimated_delivery_day}</p>
-                  )}
-                  {selectedOrder.days_until_delivery !== undefined && (
-                    <p><strong>Days Until Delivery:</strong> 
-                      <span className={`ml-2 px-2 py-1 rounded text-xs ${getDeliveryStatusColor(selectedOrder.days_until_delivery)}`}>
-                        {formatDeliveryStatus(selectedOrder.days_until_delivery)}
-                      </span>
-                    </p>
-                  )}
-                </div>
-              </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+               <div>
+                 <h4 className="font-semibold mb-3">Order Information</h4>
+                 <div className="space-y-2">
+                   <p><strong>Order #:</strong> {selectedOrder.order_number || 'N/A'}</p>
+                   <p><strong>Date:</strong> {selectedOrder.created_at ? formatDate(selectedOrder.created_at) : 'N/A'}</p>
+                   <p><strong>Status:</strong>
+                     <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                       selectedOrder.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                       selectedOrder.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                       selectedOrder.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                       'bg-yellow-100 text-yellow-800'
+                     }`}>
+                       {(selectedOrder.status || 'PENDING').toUpperCase()}
+                     </span>
+                   </p>
+                   <p><strong>Payment Status:</strong> 
+                     <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                       selectedOrder.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
+                       selectedOrder.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
+                       'bg-yellow-100 text-yellow-800'
+                     }`}>
+                       {(selectedOrder.payment_status || 'PENDING').toUpperCase()}
+                     </span>
+                   </p>
+                   {selectedOrder.razorpay_order_id && (
+                     <p><strong>Razorpay Order ID:</strong> {selectedOrder.razorpay_order_id}</p>
+                   )}
+                   {selectedOrder.razorpay_payment_id && (
+                     <p><strong>Razorpay Payment ID:</strong> {selectedOrder.razorpay_payment_id}</p>
+                   )}
+                   {selectedOrder.payment_timestamp && (
+                     <p><strong>Payment Time:</strong> {formatDateTime(selectedOrder.payment_timestamp)}</p>
+                   )}
+                   {selectedOrder.estimated_delivery_day && (
+                     <p><strong>Estimated Delivery:</strong> {selectedOrder.estimated_delivery_day}</p>
+                   )}
+                   {selectedOrder.days_until_delivery !== undefined && (
+                     <p><strong>Days Until Delivery:</strong> 
+                       <span className={`ml-2 px-2 py-1 rounded text-xs ${getDeliveryStatusColor(selectedOrder.days_until_delivery)}`}>
+                         {formatDeliveryStatus(selectedOrder.days_until_delivery)}
+                       </span>
+                     </p>
+                   )}
+                 </div>
+               </div>
 
               <div>
                 <h4 className="font-semibold mb-3">Customer Information</h4>
