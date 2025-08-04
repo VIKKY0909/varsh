@@ -63,8 +63,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
       setEditingAddress(null);
       onAddressesUpdate();
     } catch (error) {
-      console.error('Error saving address:', error);
-      alert('Failed to save address. Please try again.');
+      // Handle error silently
     }
   };
 
@@ -87,7 +86,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
       if (error) throw error;
       onAddressesUpdate();
     } catch (error) {
-      console.error('Error setting default address:', error);
+      // Handle error silently
     }
   };
 

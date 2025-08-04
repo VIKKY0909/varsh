@@ -61,7 +61,7 @@ const Categories = () => {
             .single();
 
           if (imageError) {
-            console.warn(`No sample image found for category: ${category}`);
+            // Use placeholder image if no sample product found
           }
 
           // Generate category display name and description
@@ -88,7 +88,7 @@ const Categories = () => {
             count: count ? `${count}+ Design${count !== 1 ? 's' : ''}` : "Available"
           };
         } catch (error) {
-          console.error(`Error processing category ${category}:`, error);
+          // Use placeholder image if no sample product found
           return {
             id: category,
             name: `${category.charAt(0).toUpperCase() + category.slice(1)} Kurtis`,

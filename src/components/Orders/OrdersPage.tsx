@@ -42,43 +42,41 @@ const OrdersPage = () => {
   
   const { user } = useAuth();
 
+  // Fetch user orders
   useEffect(() => {
-    if (user) {
-      fetchOrders();
-    }
-  }, [user, statusFilter]);
+    const fetchOrders = async () => {
+      if (!user) return;
 
-  const fetchOrders = async () => {
-    if (!user) return;
-
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items(
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
             *,
-            product:products(id, name, images)
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+            order_items (
+              *,
+              product:products (
+                id,
+                name,
+                price,
+                images
+              )
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+        if (error) throw error;
+        setOrders(data || []);
+      } catch (error) {
+        // Handle error silently
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const { data, error } = await query;
-      if (error) throw error;
-
-      setOrders(data || []);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchOrders();
+  }, [user]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -120,32 +118,13 @@ const OrdersPage = () => {
     return ['cancelled', 'delivered'].includes(order.status);
   };
 
+  // Delete order
   const handleDeleteOrder = async (orderId: string) => {
-    setDeletingOrder(orderId);
-    
-    const confirmed = window.confirm(
-      'Are you sure you want to delete this order from your history? This action cannot be undone.'
-    );
-    
-    if (!confirmed) {
-      setDeletingOrder(null);
+    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
       return;
     }
 
     try {
-      // Delete order items first (cascade should handle this, but being explicit)
-      await supabase
-        .from('order_items')
-        .delete()
-        .eq('order_id', orderId);
-
-      // Delete order tracking
-      await supabase
-        .from('order_tracking')
-        .delete()
-        .eq('order_id', orderId);
-
-      // Delete the order
       const { error } = await supabase
         .from('orders')
         .delete()
@@ -153,13 +132,10 @@ const OrdersPage = () => {
 
       if (error) throw error;
 
-      alert('Order deleted successfully!');
-      fetchOrders();
+      // Remove from local state
+      setOrders(orders.filter(order => order.id !== orderId));
     } catch (error) {
-      console.error('Error deleting order:', error);
-      alert('Failed to delete order. Please try again or contact support.');
-    } finally {
-      setDeletingOrder(null);
+      // Handle error silently
     }
   };
 
@@ -200,8 +176,7 @@ const OrdersPage = () => {
         });
 
     } catch (error) {
-      console.error('Error downloading invoice:', error);
-      alert('Failed to download invoice. Please try again.');
+      // Handle error silently
     } finally {
       setDownloadingInvoice(null);
     }

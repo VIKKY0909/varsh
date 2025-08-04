@@ -6,9 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Razorpay configuration
-const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET') || 'G0LXpG4OVQidER2Yy0seBq6q'
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -16,78 +13,102 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    )
+    // Get environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET')
 
-    // Get request body
+    if (!RAZORPAY_KEY_SECRET) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Razorpay credentials not configured' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Parse request body
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = await req.json()
 
     // Validate required fields
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           success: false,
-          error: 'Missing required fields: razorpay_order_id, razorpay_payment_id, razorpay_signature' 
+          error: 'Missing required fields: razorpay_order_id, razorpay_payment_id, razorpay_signature'
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
-    // Verify signature using crypto
+    // Verify signature
+    const text = `${razorpay_order_id}|${razorpay_payment_id}`
     const encoder = new TextEncoder()
-    const key = await crypto.subtle.importKey(
+    const key = encoder.encode(RAZORPAY_KEY_SECRET)
+    const message = encoder.encode(text)
+    
+    const cryptoKey = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(RAZORPAY_KEY_SECRET),
+      key,
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['sign']
     )
     
-    const signature = await crypto.subtle.sign(
-      'HMAC',
-      key,
-      encoder.encode(`${razorpay_order_id}|${razorpay_payment_id}`)
-    )
-    
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, message)
     const expectedSignature = Array.from(new Uint8Array(signature))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('')
 
     const isValid = expectedSignature === razorpay_signature
 
-    console.log('🔍 Payment verification:', {
-      order_id: razorpay_order_id,
-      payment_id: razorpay_payment_id,
-      isValid: isValid
-    })
-
-    // If payment is valid and orderId is provided, update the order in Supabase
-    if (isValid && orderId) {
+    // Update order in database if provided
+    if (orderId && isValid) {
       try {
-        const { error: updateError } = await supabaseClient
+        // Update order payment status
+        const { error: updateError } = await supabase
           .from('orders')
-          .update({ 
-            razorpay_payment_id: razorpay_payment_id,
+          .update({
             payment_status: 'paid',
-            status: 'confirmed',
-            updated_at: new Date().toISOString()
+            razorpay_order_id: razorpay_order_id,
+            razorpay_payment_id: razorpay_payment_id,
+            status: 'confirmed'
           })
           .eq('id', orderId)
 
         if (updateError) {
-          console.error('❌ Error updating order payment status:', updateError)
-        } else {
-          console.log('✅ Order payment status updated successfully')
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Payment verified but failed to update order'
+            }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          )
         }
-      } catch (updateError) {
-        console.error('❌ Error updating order:', updateError)
+      } catch (dbError) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Payment verified but failed to update order'
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
       }
     }
 
@@ -95,24 +116,24 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         isValid: isValid,
-        message: isValid ? 'Payment verified successfully' : 'Invalid payment signature'
+        order_id: razorpay_order_id,
+        payment_id: razorpay_payment_id,
+        message: isValid ? 'Payment verified successfully' : 'Payment verification failed'
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
 
   } catch (error) {
-    console.error('❌ Error verifying payment:', error)
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: false,
-        error: 'Failed to verify payment',
-        details: error.message 
+        error: 'Internal server error'
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }

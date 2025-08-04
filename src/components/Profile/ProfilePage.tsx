@@ -58,107 +58,61 @@ const ProfilePage = () => {
     { id: 'security', name: 'Security', icon: Shield }
   ];
 
+  // Fetch profile data
   useEffect(() => {
-    if (user) {
-      fetchProfileData();
-    }
+    const fetchProfileData = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+        
+        if (data) {
+          setProfile(data);
+        }
+      } catch (error) {
+        // Handle error silently
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfileData();
   }, [user]);
 
-  const fetchProfileData = async () => {
+  // Update profile
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user) return;
 
     try {
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw profileError;
-      }
-
-      if (profileData) {
-        setProfile(profileData);
-        setFormData({
-          full_name: profileData.full_name || '',
-          phone: profileData.phone || '',
-          date_of_birth: profileData.date_of_birth || '',
-          gender: profileData.gender || ''
-        });
-      } else {
-        // Create profile if it doesn't exist
-        const { data: newProfile, error: createError } = await supabase
-          .from('user_profiles')
-          .insert({
-            user_id: user.id,
-            full_name: user.user_metadata?.full_name || '',
-            phone: user.user_metadata?.phone || '',
-            email: user.email // Save the user's email
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        setProfile(newProfile);
-        setFormData({
-          full_name: newProfile.full_name || '',
-          phone: newProfile.phone || '',
-          date_of_birth: newProfile.date_of_birth || '',
-          gender: newProfile.gender || ''
-        });
-      }
-
-      // Fetch orders
-      const { data: ordersData } = await supabase
-        .from('orders')
-        .select('id, order_number, total_amount, status, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      setOrders(ordersData || []);
-
-      // Fetch addresses
-      const { data: addressesData } = await supabase
-        .from('addresses')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('is_default', { ascending: false });
-
-      setAddresses(addressesData || []);
-
-    } catch (error) {
-      console.error('Error fetching profile data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    if (!user || !profile) return;
-
-    try {
+      setUpdating(true);
+      
       const { error } = await supabase
         .from('user_profiles')
-        .update({
-          full_name: profile?.full_name || '', // Keep original full_name
-          phone: formData.phone,
-          date_of_birth: profile?.date_of_birth || null, // Keep original date_of_birth
-          gender: profile?.gender || null, // Keep original gender
-          email: user.email, // Save the user's email
+        .upsert({
+          user_id: user.id,
+          full_name: profile.full_name,
+          phone: profile.phone,
+          date_of_birth: profile.date_of_birth,
+          gender: profile.gender,
           updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
+        });
 
       if (error) throw error;
-
-      setProfile(prev => prev ? { ...prev, phone: formData.phone } : null);
-      setEditing(false);
+      
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      // Handle error silently
+    } finally {
+      setUpdating(false);
     }
   };
 

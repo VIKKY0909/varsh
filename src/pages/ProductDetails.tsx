@@ -73,7 +73,7 @@ const ProductDetails = () => {
       
       setRelatedProducts(related || []);
     } catch (error) {
-      console.error('Error fetching product:', error);
+      // Handle error silently
       navigate('/products');
     } finally {
       setLoading(false);
@@ -93,7 +93,7 @@ const ProductDetails = () => {
 
       setIsInWishlist(!!data);
     } catch (error) {
-      console.error('Error checking wishlist status:', error);
+      // Handle error silently
       setIsInWishlist(false);
     }
   };
@@ -108,8 +108,6 @@ const ProductDetails = () => {
       return;
     }
     await addToCart(id!, selectedSize, quantity);
-    // Update stock in backend
-    await supabase.rpc('decrement_product_stock', { product_id: id, quantity });
     await fetchProduct();
   };
 
@@ -123,7 +121,6 @@ const ProductDetails = () => {
       return;
     }
     await addToCart(id!, selectedSize, quantity);
-    await supabase.rpc('decrement_product_stock', { product_id: id, quantity });
     await fetchProduct();
     navigate('/checkout');
   };
@@ -152,7 +149,7 @@ const ProductDetails = () => {
         setIsInWishlist(true);
       }
     } catch (error) {
-      console.error('Error updating wishlist:', error);
+      // Handle error silently
     }
   };
 

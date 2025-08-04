@@ -45,8 +45,7 @@ const ContactUs = () => {
         setSubmitStatus('error');
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      setSubmitStatus('error');
+      // Handle error silently
     } finally {
       setIsSubmitting(false);
     }

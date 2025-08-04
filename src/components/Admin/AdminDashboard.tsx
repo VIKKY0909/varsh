@@ -17,10 +17,13 @@ import {
   CheckCircle,
   Clock,
   Truck,
-  X
+  X,
+  Menu,
+  ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { formatDate, formatDateTime } from '../../lib/dateUtils';
 import AdminOrders from './AdminOrders';
 
 interface Product {
@@ -105,6 +108,7 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalOrders: 0,
@@ -516,12 +520,19 @@ const AdminDashboard = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <h1 className="text-2xl font-bold text-mahogany">Admin Dashboard</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-mahogany">Admin Dashboard</h1>
             <div className="flex items-center gap-4">
-              <span className="text-gray-600">Welcome, Admin</span>
+              <span className="hidden sm:block text-gray-600">Welcome, Admin</span>
               <div className="w-8 h-8 bg-rose-gold rounded-full flex items-center justify-center text-white font-bold">
                 A
               </div>
+              {/* Mobile menu button */}
+              <button
+                className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <Menu className="w-6 h-6" />
+              </button>
             </div>
           </div>
         </div>
@@ -530,26 +541,31 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Navigation Tabs */}
         <div className="mb-8">
-          <nav className="flex space-x-8">
-            {[
-              { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
-              { id: 'products', name: 'Products', icon: Package },
-              { id: 'orders', name: 'Orders', icon: ShoppingCart },
-              { id: 'users', name: 'Users', icon: Users }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-rose-gold text-white'
-                    : 'text-gray-600 hover:text-rose-gold hover:bg-rose-50'
-                }`}
-              >
-                <tab.icon className="w-5 h-5" />
-                {tab.name}
-              </button>
-            ))}
+          <nav className={`${mobileMenuOpen ? 'block' : 'hidden'} md:block`}>
+            <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-8">
+              {[
+                { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
+                { id: 'products', name: 'Products', icon: Package },
+                { id: 'orders', name: 'Orders', icon: ShoppingCart },
+                { id: 'users', name: 'Users', icon: Users }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-rose-gold text-white'
+                      : 'text-gray-600 hover:text-rose-gold hover:bg-rose-50'
+                  }`}
+                >
+                  <tab.icon className="w-5 h-5" />
+                  {tab.name}
+                </button>
+              ))}
+            </div>
           </nav>
         </div>
 
@@ -557,87 +573,87 @@ const AdminDashboard = () => {
         {activeTab === 'dashboard' && (
           <div>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 text-sm">Total Products</p>
-                    <p className="text-3xl font-bold text-mahogany">{stats.totalProducts}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-mahogany">{stats.totalProducts}</p>
                   </div>
-                  <Package className="w-8 h-8 text-rose-gold" />
+                  <Package className="w-6 md:w-8 h-6 md:h-8 text-rose-gold" />
                 </div>
               </div>
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 text-sm">Total Orders</p>
-                    <p className="text-3xl font-bold text-mahogany">{stats.totalOrders}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-mahogany">{stats.totalOrders}</p>
                   </div>
-                  <ShoppingCart className="w-8 h-8 text-rose-gold" />
+                  <ShoppingCart className="w-6 md:w-8 h-6 md:h-8 text-rose-gold" />
                 </div>
               </div>
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 text-sm">Total Revenue</p>
-                    <p className="text-3xl font-bold text-mahogany">₹{stats.totalRevenue.toLocaleString()}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-mahogany">₹{stats.totalRevenue.toLocaleString()}</p>
                   </div>
-                  <TrendingUp className="w-8 h-8 text-rose-gold" />
+                  <TrendingUp className="w-6 md:w-8 h-6 md:h-8 text-rose-gold" />
                 </div>
               </div>
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 text-sm">Total Users</p>
-                    <p className="text-3xl font-bold text-mahogany">{stats.totalUsers}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-mahogany">{stats.totalUsers}</p>
                   </div>
-                  <Users className="w-8 h-8 text-rose-gold" />
+                  <Users className="w-6 md:w-8 h-6 md:h-8 text-rose-gold" />
                 </div>
               </div>
             </div>
 
             {/* Alert Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 md:p-6">
                 <div className="flex items-center gap-3">
-                  <Clock className="w-6 h-6 text-yellow-600" />
+                  <Clock className="w-5 md:w-6 h-5 md:h-6 text-yellow-600" />
                   <div>
-                    <h3 className="font-semibold text-yellow-800">Pending Orders</h3>
-                    <p className="text-yellow-700">{stats.pendingOrders} orders need attention</p>
+                    <h3 className="font-semibold text-yellow-800 text-sm md:text-base">Pending Orders</h3>
+                    <p className="text-yellow-700 text-sm">{stats.pendingOrders} orders need attention</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 md:p-6">
                 <div className="flex items-center gap-3">
-                  <Package className="w-6 h-6 text-red-600" />
+                  <Package className="w-5 md:w-6 h-5 md:h-6 text-red-600" />
                   <div>
-                    <h3 className="font-semibold text-red-800">Low Stock Alert</h3>
-                    <p className="text-red-700">{stats.lowStockProducts} products running low</p>
+                    <h3 className="font-semibold text-red-800 text-sm md:text-base">Low Stock Alert</h3>
+                    <p className="text-red-700 text-sm">{stats.lowStockProducts} products running low</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Recent Orders */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
               <h3 className="text-lg font-semibold text-mahogany mb-4">Recent Orders</h3>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2">Order #</th>
-                      <th className="text-left py-2">Customer</th>
-                      <th className="text-left py-2">Amount</th>
-                      <th className="text-left py-2">Status</th>
-                      <th className="text-left py-2">Date</th>
+                      <th className="text-left py-2 text-sm md:text-base">Order #</th>
+                      <th className="text-left py-2 text-sm md:text-base">Customer</th>
+                      <th className="text-left py-2 text-sm md:text-base">Amount</th>
+                      <th className="text-left py-2 text-sm md:text-base">Status</th>
+                      <th className="text-left py-2 text-sm md:text-base">Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orders.slice(0, 5).map((order) => (
                       <tr key={order.id} className="border-b">
-                        <td className="py-2">{order.order_number}</td>
-                        <td className="py-2">{order.shipping_address?.full_name || 'N/A'}</td>
-                        <td className="py-2">₹{order.total_amount.toLocaleString()}</td>
+                        <td className="py-2 text-sm md:text-base">{order.order_number}</td>
+                        <td className="py-2 text-sm md:text-base">{order.shipping_address?.full_name || 'N/A'}</td>
+                        <td className="py-2 text-sm md:text-base">₹{order.total_amount.toLocaleString()}</td>
                         <td className="py-2">
                           <span className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 w-fit ${
                             order.status === 'delivered' ? 'bg-green-100 text-green-800' :
@@ -646,10 +662,10 @@ const AdminDashboard = () => {
                             'bg-yellow-100 text-yellow-800'
                           }`}>
                             {getStatusIcon(order.status)}
-                            {order.status}
+                            <span className="hidden sm:inline">{order.status}</span>
                           </span>
                         </td>
-                        <td className="py-2">{new Date(order.created_at).toLocaleDateString()}</td>
+                        <td className="py-2 text-sm md:text-base">{formatDate(order.created_at)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -662,10 +678,10 @@ const AdminDashboard = () => {
         {/* Products Management */}
         {activeTab === 'products' && (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-mahogany">Products Management</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-mahogany">Products Management</h2>
               <button
-                className="flex items-center gap-2 bg-rose-gold text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+                className="flex items-center gap-2 bg-rose-gold text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors w-full sm:w-auto justify-center"
                 onClick={() => { setEditingProduct(null); setProductForm({ name: '', price: '', original_price: '', category: '', size: '', color: '', material: '', care_instructions: '', stock_quantity: '', is_featured: false, description: '', images: [] }); setProductModalOpen(true); }}
               >
                 <Plus className="w-5 h-5" />
@@ -674,8 +690,8 @@ const AdminDashboard = () => {
             </div>
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="p-6 border-b">
-                <div className="flex items-center gap-4">
+              <div className="p-4 md:p-6 border-b">
+                <div className="flex flex-col sm:flex-row gap-4">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
@@ -686,9 +702,9 @@ const AdminDashboard = () => {
                       onChange={e => setProductSearch(e.target.value)}
                     />
                   </div>
-                  <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 justify-center">
                     <Filter className="w-5 h-5" />
-                    Filter
+                    <span className="hidden sm:inline">Filter</span>
                   </button>
                 </div>
               </div>
@@ -697,35 +713,35 @@ const AdminDashboard = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="text-left py-3 px-6">Product</th>
-                      <th className="text-left py-3 px-6">Category</th>
-                      <th className="text-left py-3 px-6">Price</th>
-                      <th className="text-left py-3 px-6">Stock</th>
-                      <th className="text-left py-3 px-6">Status</th>
-                      <th className="text-left py-3 px-6">Actions</th>
+                      <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Product</th>
+                      <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Category</th>
+                      <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Price</th>
+                      <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Stock</th>
+                      <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Status</th>
+                      <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredProducts.map((product) => (
                       <tr key={product.id} className="border-b hover:bg-gray-50">
-                        <td className="py-4 px-6">
-                          <div className="font-medium text-mahogany">{product.name}</div>
+                        <td className="py-4 px-4 md:px-6">
+                          <div className="font-medium text-mahogany text-sm md:text-base">{product.name}</div>
                         </td>
-                        <td className="py-4 px-6 capitalize">{product.category}</td>
-                        <td className="py-4 px-6">₹{product.price.toLocaleString()}</td>
-                        <td className="py-4 px-6">
-                          <span className={`${product.stock_quantity < 5 ? 'text-red-600' : 'text-gray-900'}`}>
+                        <td className="py-4 px-4 md:px-6 capitalize text-sm md:text-base">{product.category}</td>
+                        <td className="py-4 px-4 md:px-6 text-sm md:text-base">₹{product.price.toLocaleString()}</td>
+                        <td className="py-4 px-4 md:px-6">
+                          <span className={`${product.stock_quantity < 5 ? 'text-red-600' : 'text-gray-900'} text-sm md:text-base`}>
                             {product.stock_quantity}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 md:px-6">
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             product.is_featured ? 'bg-rose-100 text-rose-800' : 'bg-gray-100 text-gray-800'
                           }`}>
                             {product.is_featured ? 'Featured' : 'Regular'}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 md:px-6">
                           <div className="flex items-center gap-2">
                             <button className="p-1 text-gray-600 hover:text-blue-600" onClick={() => setViewProduct(product)}>
                               <Eye className="w-4 h-4" />
@@ -779,62 +795,65 @@ const AdminDashboard = () => {
         {activeTab === 'users' && (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-mahogany">Users Management</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-mahogany">Users Management</h2>
             </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2">Name</th>
-                    <th className="text-left py-2">Email</th>
-                    <th className="text-left py-2">Phone</th>
-                    <th className="text-left py-2">Gender</th>
-                    <th className="text-left py-2">Admin</th>
-                    <th className="text-left py-2">Profile Status</th>
-                    <th className="text-left py-2">Joined</th>
-                    <th className="text-left py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className="border-b hover:bg-gray-50">
-                      <td className="py-2 font-medium">{user.full_name || 'N/A'}</td>
-                      <td className="py-2">{user.email || 'N/A'}</td>
-                      <td className="py-2">{user.phone || 'N/A'}</td>
-                      <td className="py-2 capitalize">{user.gender || 'N/A'}</td>
-                      <td className="py-2">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          user.is_admin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {user.is_admin ? 'Admin' : 'User'}
-                        </span>
-                      </td>
-                      <td className="py-2">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          user.profile_status === 'Profile Complete' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {user.profile_status || 'Unknown'}
-                        </span>
-                      </td>
-                      <td className="py-2">
-                        {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td className="py-2">
-                        <button
-                          className="px-2 py-1 text-blue-600 hover:underline"
-                          onClick={() => { setSelectedUser(user); setUserModalOpen(true); }}
-                        >
-                          View Details
-                        </button>
-                      </td>
+            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 text-sm md:text-base">Name</th>
+                      <th className="text-left py-2 text-sm md:text-base">Email</th>
+                      <th className="text-left py-2 text-sm md:text-base">Phone</th>
+                      <th className="text-left py-2 text-sm md:text-base">Gender</th>
+                      <th className="text-left py-2 text-sm md:text-base">Admin</th>
+                      <th className="text-left py-2 text-sm md:text-base">Profile Status</th>
+                      <th className="text-left py-2 text-sm md:text-base">Joined</th>
+                      <th className="text-left py-2 text-sm md:text-base">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr key={user.id} className="border-b hover:bg-gray-50">
+                        <td className="py-2 font-medium text-sm md:text-base">{user.full_name || 'N/A'}</td>
+                        <td className="py-2 text-sm md:text-base">{user.email || 'N/A'}</td>
+                        <td className="py-2 text-sm md:text-base">{user.phone || 'N/A'}</td>
+                        <td className="py-2 capitalize text-sm md:text-base">{user.gender || 'N/A'}</td>
+                        <td className="py-2">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            user.is_admin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {user.is_admin ? 'Admin' : 'User'}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            user.profile_status === 'Profile Complete' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {user.profile_status || 'Unknown'}
+                          </span>
+                        </td>
+                        <td className="py-2 text-sm md:text-base">
+                          {formatDate(user.created_at)}
+                        </td>
+                        <td className="py-2">
+                          <button
+                            className="px-2 py-1 text-blue-600 hover:underline text-sm md:text-base"
+                            onClick={() => { setSelectedUser(user); setUserModalOpen(true); }}
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
               {/* User Detail Modal */}
               {userModalOpen && selectedUser && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative">
+                  <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md shadow-lg relative">
                     <button
                       className="absolute top-4 right-4 text-gray-500 hover:text-red-500 z-10"
                       onClick={() => setUserModalOpen(false)}
@@ -895,7 +914,7 @@ const AdminDashboard = () => {
                           <div className="flex justify-between">
                             <span className="font-medium text-gray-700">Joined:</span>
                             <span className="text-gray-900">
-                              {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString() : 'N/A'}
+                              {formatDate(selectedUser.created_at)}
                             </span>
                           </div>
                         </div>
@@ -921,7 +940,7 @@ const AdminDashboard = () => {
       {/* Product Add/Edit Modal */}
       {productModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-lg relative">
+          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-lg relative">
             <button
               className="absolute top-4 right-4 text-gray-500 hover:text-red-500 z-10"
               onClick={() => setProductModalOpen(false)}
@@ -930,7 +949,7 @@ const AdminDashboard = () => {
             </button>
             
             <div className="mb-6">
-              <h3 className="text-2xl font-bold text-mahogany text-center">
+              <h3 className="text-xl md:text-2xl font-bold text-mahogany text-center">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
               </h3>
               {productFormError && (
@@ -1260,7 +1279,7 @@ const AdminDashboard = () => {
       {/* Product View Modal */}
       {viewProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-lg relative">
+          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-lg relative">
             <button
               className="absolute top-4 right-4 text-gray-500 hover:text-red-500 z-10"
               onClick={() => setViewProduct(null)}

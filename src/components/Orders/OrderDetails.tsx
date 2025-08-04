@@ -34,7 +34,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack }) => {
       if (error) throw error;
       setTracking(data || []);
     } catch (error) {
-      console.error('Error fetching tracking:', error);
+      // Handle error silently
     } finally {
       setLoadingTracking(false);
     }

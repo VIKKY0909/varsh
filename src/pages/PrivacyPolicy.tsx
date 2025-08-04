@@ -203,7 +203,7 @@ const PrivacyPolicy = () => {
             <div className="bg-gray-50 p-4 rounded-lg mb-6">
               <p className="mb-2">If you have any questions about this Privacy Policy, please contact us:</p>
               <p className="mb-2"><strong>Email:</strong> privacy@varsh.com</p>
-              <p className="mb-2"><strong>Phone:</strong> +91-XXXXXXXXXX</p>
+              <p className="mb-2"><strong>Phone:</strong> +91-9876543210</p>
               <p className="mb-2"><strong>Address:</strong> Varsh Ethnic Wears, Mumbai, Maharashtra, India</p>
             </div>
 

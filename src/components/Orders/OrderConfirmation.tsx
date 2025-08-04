@@ -32,34 +32,41 @@ const OrderConfirmation = () => {
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(true);
 
+  // Fetch order details
   useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (
+              *,
+              product:products (
+                id,
+                name,
+                price,
+                images
+              )
+            )
+          `)
+          .eq('id', orderId)
+          .single();
+
+        if (error) throw error;
+        setOrder(data);
+      } catch (error) {
+        // Handle error silently
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (orderId) {
       fetchOrder();
     }
   }, [orderId]);
-
-  const fetchOrder = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items(
-            *,
-            product:products(id, name, images)
-          )
-        `)
-        .eq('id', orderId)
-        .single();
-
-      if (error) throw error;
-      setOrder(data);
-    } catch (error) {
-      console.error('Error fetching order:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDownloadInvoice = () => {
     if (!order) return;

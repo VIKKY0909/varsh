@@ -51,38 +51,21 @@ const Hero = () => {
   const [productLoading, setProductLoading] = useState(true);
   const [productError, setProductError] = useState(false);
 
-  // Fetch featured product with corrected Supabase query
+  // Fetch featured product
   useEffect(() => {
     const fetchFeaturedProduct = async () => {
       try {
-        setProductLoading(true);
-        setProductError(false);
-
-        // Simplified Supabase query - just fetch one product with stock
         const { data, error } = await supabase
           .from('products')
-          .select('id, name, description, price, original_price, images, category, material, color, size, is_new, is_bestseller, stock_quantity, created_at')
-          .gt('stock_quantity', 0)    // Only products in stock
-          .order('created_at', { ascending: false })  // Get newest first
+          .select('*')
+          .eq('featured', true)
           .limit(1)
           .single();
 
-        if (error) {
-          console.error('Supabase error:', error);
-          setProductError(true);
-          return;
-        }
-
-        if (data) {
-          setFeaturedProduct(data);
-        } else {
-          setProductError(true);
-        }
+        if (error) throw error;
+        setFeaturedProduct(data);
       } catch (error) {
-        console.error('Error fetching featured product:', error);
-        setProductError(true);
-      } finally {
-        setProductLoading(false);
+        // Handle error silently
       }
     };
 

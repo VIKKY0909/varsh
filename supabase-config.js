@@ -4,16 +4,16 @@
 const supabaseConfig = {
   // Supabase Configuration
   supabase: {
-    url: process.env.SUPABASE_URL || 'your_supabase_project_url',
-    anonKey: process.env.SUPABASE_ANON_KEY || 'your_supabase_anon_key',
-    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || 'your_supabase_service_role_key'
+    url: process.env.SUPABASE_URL || '',
+    anonKey: process.env.SUPABASE_ANON_KEY || '',
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || ''
   },
 
   // Razorpay Configuration
   razorpay: {
-    keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_KcjoPhlso7v6VN',
-    keySecret: process.env.RAZORPAY_KEY_SECRET || 'G0LXpG4OVQidER2Yy0seBq6q',
-    frontendKey: process.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_KcjoPhlso7v6VN'
+    keyId: process.env.RAZORPAY_KEY_ID || '',
+    keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+    frontendKey: process.env.VITE_RAZORPAY_KEY_ID || ''
   },
 
   // Environment
@@ -41,11 +41,6 @@ const supabaseConfig = {
       throw new Error('Supabase configuration is incomplete. Please check your environment variables.');
     }
 
-    console.log('✅ Configuration validated successfully');
-    console.log(`🔧 Environment: ${this.environment}`);
-    console.log(`💰 Razorpay Mode: ${razorpayConfig.mode}`);
-    console.log(`🗄️  Backend: Supabase`);
-    
     return true;
   }
 };

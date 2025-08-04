@@ -6,10 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Razorpay configuration
-const RAZORPAY_KEY_ID = (typeof Deno !== "undefined" && Deno.env.get('RAZORPAY_KEY_ID')) || 'rzp_test_KcjoPhlso7v6VN'
-const RAZORPAY_KEY_SECRET = (typeof Deno !== "undefined" && Deno.env.get('RAZORPAY_KEY_SECRET')) || 'G0LXpG4OVQidER2Yy0seBq6q'
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -17,57 +13,89 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    )
+    // Parse request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid JSON in request body' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
-    // Get request body
-    const { amount, currency, receipt, notes, orderId, customerInfo } = await req.json()
+    const { amount, currency, receipt, notes } = body;
 
     // Validate required fields
     if (!amount || !currency || !receipt) {
       return new Response(
         JSON.stringify({ 
-          success: false,
+          success: false, 
           error: 'Missing required fields: amount, currency, receipt' 
         }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
 
-    // Validate amount (must be positive)
-    if (amount <= 0) {
+    // Validate amount
+    if (typeof amount !== 'number' || amount <= 0) {
       return new Response(
         JSON.stringify({ 
-          success: false,
-          error: 'Amount must be greater than 0' 
+          success: false, 
+          error: 'Amount must be a positive number' 
         }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
 
     // Validate currency
     if (currency !== 'INR') {
       return new Response(
         JSON.stringify({ 
-          success: false,
+          success: false, 
           error: 'Only INR currency is supported' 
         }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
+
+    // Get environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const RAZORPAY_KEY_ID = Deno.env.get('RAZORPAY_KEY_ID')
+    const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET')
+
+    // Validate environment variables
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Razorpay credentials not configured' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Create Razorpay order
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
@@ -80,60 +108,26 @@ serve(async (req) => {
         amount: amount * 100, // Convert to paise
         currency: currency,
         receipt: receipt,
-        notes: {
-          ...notes,
-          order_id: orderId,
-          customer_email: customerInfo?.email,
-          customer_phone: customerInfo?.phone
-        },
-        payment_capture: 1 // Auto capture payment
+        notes: notes || {}
       })
-    })
+    });
 
     if (!razorpayResponse.ok) {
-      const errorData = await razorpayResponse.text()
-      console.error('❌ Razorpay API error:', errorData)
+      const errorData = await razorpayResponse.json();
       return new Response(
         JSON.stringify({ 
-          success: false,
+          success: false, 
           error: 'Failed to create Razorpay order',
           details: errorData
         }),
         { 
-          status: 500, 
+          status: razorpayResponse.status, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
 
-    const orderData = await razorpayResponse.json()
-
-    // If orderId is provided, update the order in Supabase with Razorpay order ID
-    if (orderId) {
-      try {
-        const { error: updateError } = await supabaseClient
-          .from('orders')
-          .update({ 
-            razorpay_order_id: orderData.id,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', orderId)
-
-        if (updateError) {
-          console.error('❌ Error updating order with Razorpay ID:', updateError)
-        } else {
-          console.log('✅ Order updated with Razorpay ID:', orderData.id)
-        }
-      } catch (updateError) {
-        console.error('❌ Error updating order:', updateError)
-      }
-    }
-
-    console.log('✅ Razorpay order created:', {
-      id: orderData.id,
-      amount: orderData.amount,
-      currency: orderData.currency
-    })
+    const orderData = await razorpayResponse.json();
 
     return new Response(
       JSON.stringify({ 
@@ -143,20 +137,18 @@ serve(async (req) => {
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    )
+    );
 
   } catch (error) {
-    console.error('❌ Error:', error)
     return new Response(
       JSON.stringify({ 
-        success: false,
-        error: 'Internal server error',
-        details: error.message 
+        success: false, 
+        error: 'Internal server error' 
       }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    )
+    );
   }
 }) 

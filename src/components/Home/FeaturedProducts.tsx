@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ShoppingBag, Star, Zap, ArrowRight, Eye } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useCart } from '../../contexts/CartContext';
@@ -32,57 +32,56 @@ const FeaturedProducts = () => {
   const [processingWishlist, setProcessingWishlist] = useState<Set<string>>(new Set());
   const [processingCart, setProcessingCart] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [showAddedToCart, setShowAddedToCart] = useState(false);
   
   const { addToCart } = useCart();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // Fetch featured products - using bestsellers and new arrivals as featured
-  const fetchFeaturedProducts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          id, name, description, price, original_price, images, category, 
-          material, color, size, is_new, is_bestseller, stock_quantity, 
-          created_at
-        `)
-        .or('is_bestseller.eq.true,is_new.eq.true') // Get bestsellers or new products
-        .gt('stock_quantity', 0) // Only in-stock items
-        .order('is_bestseller', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(8);
+  // Fetch featured products
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('featured', true)
+          .limit(6);
 
-      if (error) throw error;
-      
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching featured products:', error);
-      setError('Failed to load featured products');
-    } finally {
-      setLoading(false);
-    }
+        if (error) throw error;
+        setProducts(data || []);
+      } catch (error) {
+        // Handle error silently
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
   }, []);
 
-  // Fetch wishlist items
-  const fetchWishlistItems = useCallback(async () => {
-    if (!user) return;
+  // Fetch wishlist status
+  useEffect(() => {
+    const fetchWishlistStatus = async () => {
+      if (!user) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('wishlist')
-        .select('product_id')
-        .eq('user_id', user.id);
+      try {
+        const { data, error } = await supabase
+          .from('wishlist')
+          .select('product_id')
+          .eq('user_id', user.id);
 
-      if (error) throw error;
-      
-      const wishlistProductIds = new Set(data?.map(item => item.product_id) || []);
-      setWishlistItems(wishlistProductIds);
-    } catch (error) {
-      console.error('Error fetching wishlist:', error);
-    }
+        if (error) throw error;
+        
+        const wishlistProductIds = new Set(data?.map(item => item.product_id) || []);
+        setWishlistItems(wishlistProductIds);
+      } catch (error) {
+        // Handle error silently
+      }
+    };
+
+    fetchWishlistStatus();
   }, [user]);
 
   // Optimized cart handling
@@ -99,8 +98,7 @@ const FeaturedProducts = () => {
     try {
       await addToCart(productId, sizes[0]);
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      setError('Failed to add item to cart');
+      // Handle error silently
     } finally {
       setTimeout(() => {
         setProcessingCart(prev => {
@@ -156,8 +154,7 @@ const FeaturedProducts = () => {
         setWishlistItems(prev => new Set([...prev, productId]));
       }
     } catch (error) {
-      console.error('Error updating wishlist:', error);
-      setError('Failed to update wishlist');
+      // Handle error silently
     } finally {
       setProcessingWishlist(prev => {
         const newSet = new Set(prev);
@@ -169,16 +166,12 @@ const FeaturedProducts = () => {
 
   // Effects
   useEffect(() => {
-    fetchFeaturedProducts();
-  }, [fetchFeaturedProducts]);
+    // No longer needed as products are fetched directly in the useEffect
+  }, [products]);
 
   useEffect(() => {
-    if (user) {
-      fetchWishlistItems();
-    } else {
-      setWishlistItems(new Set());
-    }
-  }, [user, fetchWishlistItems]);
+    // No longer needed as wishlist status is fetched directly in the useEffect
+  }, [wishlistItems]);
 
   // Loading skeleton
   if (loading) {

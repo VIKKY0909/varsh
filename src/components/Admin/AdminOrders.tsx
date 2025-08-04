@@ -1,7 +1,8 @@
 // src/components/Admin/AdminOrders.tsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Eye, ChevronLeft, ChevronRight, X, Phone, Mail, MapPin, Package, Calendar, DollarSign, CreditCard } from 'lucide-react';
+import { Eye, ChevronLeft, ChevronRight, X, Phone, Mail, MapPin, Package, Calendar, DollarSign, CreditCard, Search } from 'lucide-react';
+import { formatDate, formatDateTime, getDaysUntilDelivery, formatDeliveryStatus, getDeliveryStatusColor } from '../../lib/dateUtils';
 
 interface OrderDetails {
   id: string;
@@ -99,7 +100,7 @@ function groupOrders(flatOrders: any[]): OrderDetails[] {
           };
         }
       } catch (e) {
-        console.warn('Error parsing shipping address:', e);
+        // Return empty object if parsing fails
       }
 
       ordersMap[row.order_id] = {
@@ -164,122 +165,105 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Fetch orders with proper grouping from flat SQL result
-  const fetchOrders = async () => {
+  // Parse shipping address safely
+  const parseShippingAddress = (address: any) => {
     try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch the flat array from the admin_orders_flat view
-      const { data: flatOrders, error: ordersError } = await supabase
-        .from('admin_orders_flat')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (ordersError) {
-        console.error('Error fetching orders:', ordersError);
-        throw ordersError;
+      if (typeof address === 'string') {
+        return JSON.parse(address);
       }
-
-      if (!flatOrders || flatOrders.length === 0) {
-        setOrders([]);
-        return;
-      }
-
-      // Group and normalize
-      const grouped = groupOrders(flatOrders);
-      setOrders(grouped);
-    } catch (err) {
-      console.error('Error in fetchOrders:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch orders');
-    } finally {
-      setLoading(false);
+      return address || {};
+    } catch (e) {
+      // Return empty object if parsing fails
+      return {};
     }
   };
 
-  // Fetch orders on component mount if not provided as props
+  // Fetch orders
   useEffect(() => {
-    if (!propOrders) {
-      fetchOrders();
-    }
-  }, [propOrders]);
-
-  // Update orders when props change
-  useEffect(() => {
-    if (propOrders) {
-      setOrders(propOrders);
-    }
-  }, [propOrders]);
-
-  const handleStatusUpdate = async (orderId: string, newStatus: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // If onUpdateStatus prop is provided, use it
-      if (onUpdateStatus) {
-        await onUpdateStatus(orderId, newStatus);
-      } else {
-        // Otherwise, update directly
-        const { error } = await supabase
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        let query = supabase
           .from('orders')
-          .update({ status: newStatus })
-          .eq('id', orderId);
+          .select(`
+            *,
+            order_items (
+              *,
+              product:products (
+                id,
+                name,
+                price,
+                images
+              )
+            ),
+            user:user_profiles (
+              full_name,
+              email
+            )
+          `)
+          .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        // Apply filters
+        if (statusFilter !== 'all') {
+          query = query.eq('status', statusFilter);
+        }
+
+        if (searchTerm) {
+          query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
+        }
+
+        const { data, error: ordersError } = await query;
+
+        if (ordersError) throw ordersError;
+
+        setOrders(data || []);
+      } catch (err) {
+        // Handle error silently
+      } finally {
+        setLoading(false);
       }
+    };
+
+    fetchOrders();
+  }, [statusFilter, searchTerm]);
+
+  // Update order status
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus })
+        .eq('id', orderId);
+
+      if (error) throw error;
 
       // Update local state
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === orderId ? { ...order, status: newStatus } : order
-        )
-      );
-
-      // Update selected order if it's the one being updated
-      if (selectedOrder?.id === orderId) {
-        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
-      }
-
+      setOrders(orders.map(order => 
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
     } catch (err) {
-      console.error('Error updating order status:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update order status');
-    } finally {
-      setLoading(false);
+      // Handle error silently
     }
   };
 
+  // Delete order
   const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm('Are you sure you want to delete this order?')) return;
+    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+      return;
+    }
 
     try {
-      setLoading(true);
-      setError(null);
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
 
-      if (onDeleteOrder) {
-        await onDeleteOrder(orderId);
-      } else {
-        const { error } = await supabase
-          .from('orders')
-          .delete()
-          .eq('id', orderId);
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       // Remove from local state
-      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
-
-      // Close modal if deleted order was selected
-      if (selectedOrder?.id === orderId) {
-        setSelectedOrder(null);
-      }
-
+      setOrders(orders.filter(order => order.id !== orderId));
     } catch (err) {
-      console.error('Error deleting order:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete order');
-    } finally {
-      setLoading(false);
+      // Handle error silently
     }
   };
 
@@ -308,7 +292,53 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
         <p>{error}</p>
         <button
-          onClick={fetchOrders}
+          onClick={() => {
+            // Re-fetch orders on retry
+            const fetchOrders = async () => {
+              try {
+                setLoading(true);
+                setError(null);
+                let query = supabase
+                  .from('orders')
+                  .select(`
+                    *,
+                    order_items (
+                      *,
+                      product:products (
+                        id,
+                        name,
+                        price,
+                        images
+                      )
+                    ),
+                    user:user_profiles (
+                      full_name,
+                      email
+                    )
+                  `)
+                  .order('created_at', { ascending: false });
+
+                if (statusFilter !== 'all') {
+                  query = query.eq('status', statusFilter);
+                }
+
+                if (searchTerm) {
+                  query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
+                }
+
+                const { data, error: ordersError } = await query;
+
+                if (ordersError) throw ordersError;
+
+                setOrders(data || []);
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+              } finally {
+                setLoading(false);
+              }
+            };
+            fetchOrders();
+          }}
           className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
         >
           Retry
@@ -318,33 +348,79 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <h2 className="text-xl font-bold">Order Management</h2>
         <button
-          onClick={fetchOrders}
+          onClick={() => {
+            const fetchOrders = async () => {
+              try {
+                setLoading(true);
+                setError(null);
+                let query = supabase
+                  .from('orders')
+                  .select(`
+                    *,
+                    order_items (
+                      *,
+                      product:products (
+                        id,
+                        name,
+                        price,
+                        images
+                      )
+                    ),
+                    user:user_profiles (
+                      full_name,
+                      email
+                    )
+                  `)
+                  .order('created_at', { ascending: false });
+
+                if (statusFilter !== 'all') {
+                  query = query.eq('status', statusFilter);
+                }
+
+                if (searchTerm) {
+                  query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
+                }
+
+                const { data, error: ordersError } = await query;
+
+                if (ordersError) throw ordersError;
+
+                setOrders(data || []);
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+              } finally {
+                setLoading(false);
+              }
+            };
+            fetchOrders();
+          }}
           disabled={loading}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 w-full sm:w-auto"
         >
           {loading ? 'Loading...' : 'Refresh'}
         </button>
       </div>
 
       {/* Search and Filter Controls */}
-      <div className="flex gap-4 mb-6">
-        <div className="flex-1">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
             placeholder="Search by order number, customer name, or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
         >
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
@@ -362,7 +438,52 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
             {orders.length === 0 ? 'No orders found' : 'No orders match your search criteria'}
           </p>
           <button
-            onClick={fetchOrders}
+            onClick={() => {
+              const fetchOrders = async () => {
+                try {
+                  setLoading(true);
+                  setError(null);
+                  let query = supabase
+                    .from('orders')
+                    .select(`
+                      *,
+                      order_items (
+                        *,
+                        product:products (
+                          id,
+                          name,
+                          price,
+                          images
+                        )
+                      ),
+                      user:user_profiles (
+                        full_name,
+                        email
+                      )
+                    `)
+                    .order('created_at', { ascending: false });
+
+                  if (statusFilter !== 'all') {
+                    query = query.eq('status', statusFilter);
+                  }
+
+                  if (searchTerm) {
+                    query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
+                  }
+
+                  const { data, error: ordersError } = await query;
+
+                  if (ordersError) throw ordersError;
+
+                  setOrders(data || []);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+                } finally {
+                  setLoading(false);
+                }
+              };
+              fetchOrders();
+            }}
             className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
             Refresh Orders
@@ -373,134 +494,128 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
           <table className="w-full">
             <thead>
               <tr className="border-b">
-                <th className="text-left py-2">Order #</th>
-                <th className="text-left py-2">Customer</th>
-                <th className="text-left py-2">Amount</th>
-                <th className="text-left py-2">Items</th>
-                <th className="text-left py-2">Status</th>
-                <th className="text-left py-2">Payment</th>
-                <th className="text-left py-2">Delivery</th>
-                <th className="text-left py-2">Actions</th>
+                <th className="text-left py-2 text-sm md:text-base">Order #</th>
+                <th className="text-left py-2 text-sm md:text-base">Customer</th>
+                <th className="text-left py-2 text-sm md:text-base">Amount</th>
+                <th className="text-left py-2 text-sm md:text-base">Items</th>
+                <th className="text-left py-2 text-sm md:text-base">Status</th>
+                <th className="text-left py-2 text-sm md:text-base">Payment</th>
+                <th className="text-left py-2 text-sm md:text-base">Delivery</th>
+                <th className="text-left py-2 text-sm md:text-base">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="border-b hover:bg-gray-50">
-                  <td className="py-2">
-                    <div className="font-medium">{order.order_number}</div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="py-2">
-                    <div className="font-medium">
-                      {order.user?.user_profiles?.full_name || 'N/A'}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {order.user?.email || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="py-2">₹{order.total_amount.toLocaleString()}</td>
-                  <td className="py-2">
-                    {(() => {
-                      if (!order.order_items || order.order_items.length === 0) {
-                        return <span className="text-xs text-gray-400">No items</span>;
-                      }
-
-                      return (
-                        <div className="text-sm text-gray-700">
-                          {order.order_items.slice(0, 2).map((item, index) => {
-                            const productName = item.product?.name || 'Unknown Product';
-                            return (
-                              <div key={item.id || index}>
-                                {productName} x{item.quantity || 0}
-                              </div>
-                            );
-                          })}
-                          {order.order_items.length > 2 && (
-                            <span className="text-xs text-gray-500">
-                              +{order.order_items.length - 2} more
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </td>
-                  <td className="py-2">
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                      disabled={loading}
-                      className="border rounded px-2 py-1 text-sm"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </td>
-                  <td className="py-2">
-                    <div className="text-sm">
-                      <div className={`inline-block px-2 py-1 rounded text-xs ${
-                        order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-                        order.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {order.payment_status?.toUpperCase() || 'PENDING'}
+              {filteredOrders.map((order) => {
+                const daysUntilDelivery = getDaysUntilDelivery(order.estimated_delivery_day);
+                
+                return (
+                  <tr key={order.id} className="border-b hover:bg-gray-50">
+                    <td className="py-2">
+                      <div className="font-medium text-sm md:text-base">{order.order_number}</div>
+                      <div className="text-xs text-gray-500">
+                        {formatDate(order.created_at)}
                       </div>
-                      {order.razorpay_order_id && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Razorpay: {order.razorpay_order_id.slice(0, 8)}...
+                    </td>
+                    <td className="py-2">
+                      <div className="font-medium text-sm md:text-base">
+                        {order.user?.user_profiles?.full_name || 'N/A'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {order.user?.email || 'N/A'}
+                      </div>
+                    </td>
+                    <td className="py-2 text-sm md:text-base">₹{order.total_amount.toLocaleString()}</td>
+                    <td className="py-2">
+                      {(() => {
+                        if (!order.order_items || order.order_items.length === 0) {
+                          return <span className="text-xs text-gray-400">No items</span>;
+                        }
+
+                        return (
+                          <div className="text-sm text-gray-700">
+                            {order.order_items.slice(0, 2).map((item, index) => {
+                              const productName = item.product?.name || 'Unknown Product';
+                              return (
+                                <div key={item.id || index} className="text-xs md:text-sm">
+                                  {productName} x{item.quantity || 0}
+                                </div>
+                              );
+                            })}
+                            {order.order_items.length > 2 && (
+                              <span className="text-xs text-gray-500">
+                                +{order.order_items.length - 2} more
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </td>
+                    <td className="py-2">
+                      <select
+                        value={order.status}
+                        onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                        disabled={loading}
+                        className="border rounded px-2 py-1 text-xs md:text-sm"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </td>
+                    <td className="py-2">
+                      <div className="text-sm">
+                        <div className={`inline-block px-2 py-1 rounded text-xs ${
+                          order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
+                          order.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {order.payment_status?.toUpperCase() || 'PENDING'}
                         </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-2">
-                    <div className="text-sm">
-                      {order.estimated_delivery_day ? (
-                        <div>
-                          <div className="font-medium">{order.estimated_delivery_day}</div>
-                          {order.days_until_delivery !== undefined && (
-                            <div className={`text-xs px-1 py-0.5 rounded ${
-                              order.days_until_delivery < 0 ? 'bg-red-100 text-red-800' :
-                              order.days_until_delivery === 0 ? 'bg-yellow-100 text-yellow-800' :
-                              order.days_until_delivery <= 3 ? 'bg-orange-100 text-orange-800' :
-                              'bg-green-100 text-green-800'
-                            }`}>
-                              {order.days_until_delivery < 0 ? 'Overdue' :
-                               order.days_until_delivery === 0 ? 'Today' :
-                               order.days_until_delivery === 1 ? 'Tomorrow' :
-                               `${order.days_until_delivery} days`}
+                        {order.razorpay_order_id && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Razorpay: {order.razorpay_order_id.slice(0, 8)}...
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-2">
+                      <div className="text-sm">
+                        {order.estimated_delivery_day ? (
+                          <div>
+                            <div className="font-medium text-xs md:text-sm">{order.estimated_delivery_day}</div>
+                            <div className={`text-xs px-1 py-0.5 rounded ${getDeliveryStatusColor(daysUntilDelivery)}`}>
+                              {formatDeliveryStatus(daysUntilDelivery)}
                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-xs">Not set</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-2">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="View Details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteOrder(order.id)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Delete Order"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Not set</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-2">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteOrder(order.id)}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete Order"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -508,8 +623,8 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
 
       {/* Order Detail Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl relative">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl relative">
             <button
               className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
               onClick={() => setSelectedOrder(null)}
@@ -517,14 +632,14 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
               <X className="w-6 h-6" />
             </button>
 
-            <h3 className="text-2xl font-bold mb-6">Order Details</h3>
+            <h3 className="text-xl md:text-2xl font-bold mb-6">Order Details</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <h4 className="font-semibold mb-3">Order Information</h4>
                 <div className="space-y-2">
                   <p><strong>Order #:</strong> {selectedOrder.order_number}</p>
-                  <p><strong>Date:</strong> {new Date(selectedOrder.created_at).toLocaleDateString()}</p>
+                  <p><strong>Date:</strong> {formatDate(selectedOrder.created_at)}</p>
                   <p><strong>Status:</strong>
                     <span className={`ml-2 px-2 py-1 rounded text-xs ${
                       selectedOrder.status === 'delivered' ? 'bg-green-100 text-green-800' :
@@ -551,23 +666,15 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                     <p><strong>Razorpay Payment ID:</strong> {selectedOrder.razorpay_payment_id}</p>
                   )}
                   {selectedOrder.payment_timestamp && (
-                    <p><strong>Payment Time:</strong> {new Date(selectedOrder.payment_timestamp).toLocaleString()}</p>
+                    <p><strong>Payment Time:</strong> {formatDateTime(selectedOrder.payment_timestamp)}</p>
                   )}
                   {selectedOrder.estimated_delivery_day && (
                     <p><strong>Estimated Delivery:</strong> {selectedOrder.estimated_delivery_day}</p>
                   )}
                   {selectedOrder.days_until_delivery !== undefined && (
                     <p><strong>Days Until Delivery:</strong> 
-                      <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                        selectedOrder.days_until_delivery < 0 ? 'bg-red-100 text-red-800' :
-                        selectedOrder.days_until_delivery === 0 ? 'bg-yellow-100 text-yellow-800' :
-                        selectedOrder.days_until_delivery <= 3 ? 'bg-orange-100 text-orange-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {selectedOrder.days_until_delivery < 0 ? 'Overdue' :
-                         selectedOrder.days_until_delivery === 0 ? 'Today' :
-                         selectedOrder.days_until_delivery === 1 ? 'Tomorrow' :
-                         `${selectedOrder.days_until_delivery} days`}
+                      <span className={`ml-2 px-2 py-1 rounded text-xs ${getDeliveryStatusColor(selectedOrder.days_until_delivery)}`}>
+                        {formatDeliveryStatus(selectedOrder.days_until_delivery)}
                       </span>
                     </p>
                   )}
@@ -628,7 +735,7 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                           />
                         )}
                         <div className="flex-1">
-                          <p className="font-medium">{productName}</p>
+                          <p className="font-medium text-sm md:text-base">{productName}</p>
                           <p className="text-sm text-gray-600">Size: {item.size || 'N/A'} | Quantity: {item.quantity || 0}</p>
                         </div>
                         <p className="font-semibold text-lg">₹{(item.price || 0).toLocaleString()}</p>

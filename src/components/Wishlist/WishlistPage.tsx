@@ -28,70 +28,82 @@ const WishlistPage = () => {
   const { user } = useAuth();
   const { addToCart } = useCart();
 
+  // Fetch wishlist
   useEffect(() => {
-    if (user) {
-      fetchWishlist();
-    }
+    const fetchWishlist = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('wishlist')
+          .select(`
+            *,
+            product:products (
+              id,
+              name,
+              price,
+              original_price,
+              images,
+              stock_quantity
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setWishlistItems(data || []);
+      } catch (error) {
+        // Handle error silently
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWishlist();
   }, [user]);
 
-  const fetchWishlist = async () => {
+  // Remove from wishlist
+  const handleRemoveFromWishlist = async (productId: string) => {
     if (!user) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('wishlist')
-        .select(`
-          *,
-          product:products(*)
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setWishlistItems(data || []);
-    } catch (error) {
-      console.error('Error fetching wishlist:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const removeFromWishlist = async (itemId: string) => {
     try {
       const { error } = await supabase
         .from('wishlist')
         .delete()
-        .eq('id', itemId);
+        .eq('user_id', user.id)
+        .eq('product_id', productId);
 
       if (error) throw error;
-      setWishlistItems(items => items.filter(item => item.id !== itemId));
+
+      // Remove from local state
+      setWishlistItems(wishlistItems.filter(item => item.product_id !== productId));
     } catch (error) {
-      console.error('Error removing from wishlist:', error);
+      // Handle error silently
     }
   };
 
-  const toggleNotification = async (itemId: string, type: 'stock' | 'price') => {
-    const item = wishlistItems.find(item => item.id === itemId);
-    if (!item) return;
-
-    const updateField = type === 'stock' ? 'notify_on_stock' : 'notify_on_price_drop';
-    const newValue = !item[updateField];
+  // Update notification preference
+  const handleNotificationToggle = async (productId: string, currentValue: boolean) => {
+    if (!user) return;
 
     try {
       const { error } = await supabase
         .from('wishlist')
-        .update({ [updateField]: newValue })
-        .eq('id', itemId);
+        .update({ notify_when_available: !currentValue })
+        .eq('user_id', user.id)
+        .eq('product_id', productId);
 
       if (error) throw error;
 
-      setWishlistItems(items =>
-        items.map(item =>
-          item.id === itemId ? { ...item, [updateField]: newValue } : item
-        )
-      );
+      // Update local state
+      setWishlistItems(wishlistItems.map(item => 
+        item.product_id === productId 
+          ? { ...item, notify_when_available: !currentValue }
+          : item
+      ));
     } catch (error) {
-      console.error('Error updating notification preference:', error);
+      // Handle error silently
     }
   };
 
@@ -198,7 +210,7 @@ const WishlistPage = () => {
 
                   {/* Remove Button */}
                   <button
-                    onClick={() => removeFromWishlist(item.id)}
+                    onClick={() => handleRemoveFromWishlist(item.product_id)}
                     className="absolute top-4 right-4 bg-white bg-opacity-90 backdrop-blur p-2 rounded-full hover:bg-red-50 hover:text-red-500 transition-all duration-300"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -233,7 +245,7 @@ const WishlistPage = () => {
                   {/* Notification Settings */}
                   <div className="flex items-center gap-4 mb-4 text-sm">
                     <button
-                      onClick={() => toggleNotification(item.id, 'stock')}
+                      onClick={() => handleNotificationToggle(item.product_id, item.notify_on_stock)}
                       className={`flex items-center gap-1 ${
                         item.notify_on_stock ? 'text-rose-gold' : 'text-gray-400'
                       }`}
@@ -242,7 +254,7 @@ const WishlistPage = () => {
                       Stock Alert
                     </button>
                     <button
-                      onClick={() => toggleNotification(item.id, 'price')}
+                      onClick={() => handleNotificationToggle(item.product_id, item.notify_on_price_drop)}
                       className={`flex items-center gap-1 ${
                         item.notify_on_price_drop ? 'text-rose-gold' : 'text-gray-400'
                       }`}
