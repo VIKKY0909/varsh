@@ -32,26 +32,7 @@ const AboutUs = () => {
     }
   ];
 
-  const team = [
-    {
-      name: 'Priya Sharma',
-      role: 'Founder & CEO',
-      image: '/team/priya.jpg',
-      bio: 'Passionate about bringing authentic ethnic wear to modern women.'
-    },
-    {
-      name: 'Rajesh Kumar',
-      role: 'Head of Operations',
-      image: '/team/rajesh.jpg',
-      bio: 'Ensuring seamless delivery and customer satisfaction.'
-    },
-    {
-      name: 'Meera Patel',
-      role: 'Creative Director',
-      image: '/team/meera.jpg',
-      bio: 'Curating the finest collection of ethnic wear from across India.'
-    }
-  ];
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -79,7 +60,7 @@ const AboutUs = () => {
                   A feeling that every skin tone deserves to shine. A belief that <span className="font-semibold text-mahogany">सुंदरता</span> isn't one-size-fits-all.
                 </p>
                 <p>
-                  We're Vivek, Varsha, and Ayush—three friends who grew up surrounded by <span className="font-semibold text-mahogany">रंग, रिवाज़, and रूट्स</span>. 
+                  We're <span className="font-semibold text-mahogany">Varsha</span> (Founder & CEO), <span className="font-semibold text-mahogany">Vivek</span> and <span className="font-semibold text-mahogany">Ayush</span> (Co-founders)—three friends who grew up surrounded by <span className="font-semibold text-mahogany">रंग, रिवाज़, and रूट्स</span>. 
                   And we wanted to bring all of that into fashion that feels like <span className="font-semibold text-mahogany">अपनापन</span>.
                 </p>
                 <p>
@@ -179,24 +160,80 @@ const AboutUs = () => {
         </div>
       </div>
 
-      {/* Team Section */}
-      <div className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Meet Our Team</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {team.map((member, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-sm text-center">
-                <div className="w-24 h-24 bg-gradient-to-br from-rose-gold to-copper rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
-                  {member.name.charAt(0)}
-                </div>
-                <h3 className="text-xl font-semibold text-mahogany mb-2">{member.name}</h3>
-                <p className="text-rose-gold font-medium mb-3">{member.role}</p>
-                <p className="text-gray-600">{member.bio}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+             {/* Team Section */}
+       <div className="py-16">
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+           <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Meet Our Leadership Team</h2>
+           
+           {/* Founder Section */}
+           <div className="mb-16">
+             <div className="grid lg:grid-cols-2 gap-12 items-center">
+               <div className="relative">
+                 <img
+                   src="../../public/founder.jpg"
+                   alt="Varsha - Founder & CEO of Varsh Ethnic Wears"
+                   className="w-full h-96 lg:h-[500px] object-cover rounded-3xl shadow-2xl"
+                 />
+                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent rounded-3xl"></div>
+                 <div className="absolute bottom-8 left-8 right-8 text-white">
+                   <h3 className="text-2xl font-bold mb-2">Varsha</h3>
+                   <p className="text-lg font-medium text-rose-gold">Founder & CEO</p>
+                   <p className="text-sm opacity-90 mt-2">Passionate about bringing authentic ethnic wear to modern women and celebrating every skin tone.</p>
+                 </div>
+               </div>
+               <div className="bg-gradient-to-br from-rose-50 to-copper-50 p-8 rounded-2xl">
+                 <h3 className="text-2xl font-bold text-mahogany mb-6">Our Founder's Vision</h3>
+                 <div className="space-y-4 text-gray-700">
+                   <p className="text-lg leading-relaxed">
+                     Varsha leads our mission to celebrate <span className="font-semibold text-mahogany">हर रंग की त्वचा</span> (every skin tone) 
+                     through authentic ethnic wear that carries <span className="font-semibold text-mahogany">परंपरा</span> (tradition) with a modern touch.
+                   </p>
+                   <p className="text-lg leading-relaxed">
+                     Her vision is to create fashion that feels like <span className="font-semibold text-mahogany">अपनापन</span> (belonging), 
+                     where every woman can find her perfect style that celebrates her unique beauty.
+                   </p>
+                   <div className="flex items-center gap-2 text-mahogany mt-6">
+                     <Star className="w-5 h-5" />
+                     <span className="font-semibold">Style for Every Skin. Designed for Every Soul.</span>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+
+           {/* Co-founders Section */}
+           <div className="grid lg:grid-cols-2 gap-12 items-center">
+             <div className="bg-gradient-to-br from-rose-50 to-copper-50 p-8 rounded-2xl">
+               <h3 className="text-2xl font-bold text-mahogany mb-6">Our Co-founders</h3>
+               <div className="space-y-6">
+                 <div className="border-l-4 border-rose-gold pl-6">
+                   <h4 className="text-xl font-semibold text-mahogany mb-2">Vivek</h4>
+                   <p className="text-rose-gold font-medium mb-2">Co-founder</p>
+                   <p className="text-gray-700">Ensuring seamless operations and customer satisfaction with a focus on quality and excellence.</p>
+                 </div>
+                 <div className="border-l-4 border-rose-gold pl-6">
+                   <h4 className="text-xl font-semibold text-mahogany mb-2">Ayush</h4>
+                   <p className="text-rose-gold font-medium mb-2">Co-founder</p>
+                   <p className="text-gray-700">Curating the finest collection of ethnic wear from across India with traditional values and modern appeal.</p>
+                 </div>
+               </div>
+             </div>
+             <div className="relative">
+               <img
+                 src="../../public/team.jpg"
+                 alt="Varsh Team - Vivek and Ayush, Co-founders"
+                 className="w-full h-96 lg:h-[500px] object-cover rounded-3xl shadow-2xl"
+               />
+               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent rounded-3xl"></div>
+               <div className="absolute bottom-8 left-8 right-8 text-white">
+                 <h3 className="text-2xl font-bold mb-2">Our Dedicated Team</h3>
+                 <p className="text-lg font-medium text-rose-gold">Vivek & Ayush - Co-founders</p>
+                 <p className="text-sm opacity-90 mt-2">Working together to bring you the best of Indian ethnic wear with passion and dedication.</p>
+               </div>
+             </div>
+           </div>
+         </div>
+       </div>
 
       {/* Why Choose Us */}
       <div className="py-16 bg-white">
