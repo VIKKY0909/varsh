@@ -183,24 +183,17 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
     const fetchOrders = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
+        // Check if Supabase is properly configured
+        if (!supabase) {
+          throw new Error('Supabase client is not properly configured');
+        }
+        
+        // First, fetch orders with basic information
         let query = supabase
           .from('orders')
-          .select(`
-            *,
-            order_items (
-              *,
-              product:products (
-                id,
-                name,
-                price,
-                images
-              )
-            ),
-            user:user_profiles (
-              full_name,
-              email
-            )
-          `)
+          .select('*')
           .order('created_at', { ascending: false });
 
         // Apply filters
@@ -209,16 +202,90 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
         }
 
         if (searchTerm) {
-          query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
+          query = query.or(`order_number.ilike.%${searchTerm}%`);
         }
 
-        const { data, error: ordersError } = await query;
+        const { data: ordersData, error: ordersError } = await query;
 
-        if (ordersError) throw ordersError;
+        if (ordersError) {
+          console.error('Orders fetch error:', ordersError);
+          throw ordersError;
+        }
 
-        setOrders(data || []);
+        if (!ordersData || ordersData.length === 0) {
+          setOrders([]);
+          return;
+        }
+
+        // Fetch order items for each order
+        const ordersWithItems = await Promise.all(
+          ordersData.map(async (order) => {
+            try {
+              // Fetch order items
+              const { data: itemsData, error: itemsError } = await supabase
+                .from('order_items')
+                .select(`
+                  *,
+                  products (
+                    id,
+                    name,
+                    price,
+                    images
+                  )
+                `)
+                .eq('order_id', order.id);
+
+              if (itemsError) {
+                console.error('Order items fetch error:', itemsError);
+              }
+
+              // Fetch user profile
+              const { data: userData, error: userError } = await supabase
+                .from('user_profiles')
+                .select('full_name, email, phone, gender, date_of_birth')
+                .eq('user_id', order.user_id)
+                .single();
+
+              if (userError) {
+                console.error('User profile fetch error:', userError);
+              }
+
+              return {
+                ...order,
+                order_items: itemsData || [],
+                user: {
+                  email: userData?.email || '',
+                  user_profiles: {
+                    full_name: userData?.full_name || '',
+                    phone: userData?.phone || '',
+                    gender: userData?.gender || '',
+                    date_of_birth: userData?.date_of_birth || ''
+                  }
+                }
+              };
+            } catch (err) {
+              console.error('Error fetching order details:', err);
+              return {
+                ...order,
+                order_items: [],
+                user: {
+                  email: '',
+                  user_profiles: {
+                    full_name: '',
+                    phone: '',
+                    gender: '',
+                    date_of_birth: ''
+                  }
+                }
+              };
+            }
+          })
+        );
+
+        setOrders(ordersWithItems);
       } catch (err) {
-        // Handle error silently
+        console.error('Fetch orders error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch orders. Please check your Supabase configuration.');
       } finally {
         setLoading(false);
       }
@@ -357,40 +424,102 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
               try {
                 setLoading(true);
                 setError(null);
+                
+                // First, fetch orders with basic information
                 let query = supabase
                   .from('orders')
-                  .select(`
-                    *,
-                    order_items (
-                      *,
-                      product:products (
-                        id,
-                        name,
-                        price,
-                        images
-                      )
-                    ),
-                    user:user_profiles (
-                      full_name,
-                      email
-                    )
-                  `)
+                  .select('*')
                   .order('created_at', { ascending: false });
 
+                // Apply filters
                 if (statusFilter !== 'all') {
                   query = query.eq('status', statusFilter);
                 }
 
                 if (searchTerm) {
-                  query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
+                  query = query.or(`order_number.ilike.%${searchTerm}%`);
                 }
 
-                const { data, error: ordersError } = await query;
+                const { data: ordersData, error: ordersError } = await query;
 
-                if (ordersError) throw ordersError;
+                if (ordersError) {
+                  console.error('Orders fetch error:', ordersError);
+                  throw ordersError;
+                }
 
-                setOrders(data || []);
+                if (!ordersData || ordersData.length === 0) {
+                  setOrders([]);
+                  return;
+                }
+
+                // Fetch order items for each order
+                const ordersWithItems = await Promise.all(
+                  ordersData.map(async (order) => {
+                    try {
+                      // Fetch order items
+                      const { data: itemsData, error: itemsError } = await supabase
+                        .from('order_items')
+                        .select(`
+                          *,
+                          products (
+                            id,
+                            name,
+                            price,
+                            images
+                          )
+                        `)
+                        .eq('order_id', order.id);
+
+                      if (itemsError) {
+                        console.error('Order items fetch error:', itemsError);
+                      }
+
+                      // Fetch user profile
+                      const { data: userData, error: userError } = await supabase
+                        .from('user_profiles')
+                        .select('full_name, email, phone, gender, date_of_birth')
+                        .eq('user_id', order.user_id)
+                        .single();
+
+                      if (userError) {
+                        console.error('User profile fetch error:', userError);
+                      }
+
+                      return {
+                        ...order,
+                        order_items: itemsData || [],
+                        user: {
+                          email: userData?.email || '',
+                          user_profiles: {
+                            full_name: userData?.full_name || '',
+                            phone: userData?.phone || '',
+                            gender: userData?.gender || '',
+                            date_of_birth: userData?.date_of_birth || ''
+                          }
+                        }
+                      };
+                    } catch (err) {
+                      console.error('Error fetching order details:', err);
+                      return {
+                        ...order,
+                        order_items: [],
+                        user: {
+                          email: '',
+                          user_profiles: {
+                            full_name: '',
+                            phone: '',
+                            gender: '',
+                            date_of_birth: ''
+                          }
+                        }
+                      };
+                    }
+                  })
+                );
+
+                setOrders(ordersWithItems);
               } catch (err) {
+                console.error('Fetch orders error:', err);
                 setError(err instanceof Error ? err.message : 'Failed to fetch orders');
               } finally {
                 setLoading(false);
