@@ -65,7 +65,7 @@ interface OrderManagementProps {
   onDeleteOrder?: (orderId: string) => Promise<void>;
 }
 
-// --- GROUPING FUNCTION FOR FLAT SQL DATA (MATCHING SQL FIELDS) ---
+// --- GROUPING FUNCTION FOR FLAT SQL DATA ---
 function groupOrders(flatOrders: any[]): OrderDetails[] {
   const ordersMap: { [orderId: string]: OrderDetails } = {};
 
@@ -100,7 +100,7 @@ function groupOrders(flatOrders: any[]): OrderDetails[] {
           };
         }
       } catch (e) {
-        // Return empty object if parsing fails
+        console.warn('Error parsing shipping address:', e);
       }
 
       ordersMap[row.order_id] = {
@@ -165,67 +165,39 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Parse shipping address safely
-  const parseShippingAddress = (address: any) => {
+  // Fetch orders using the view
+  const fetchOrders = async () => {
     try {
-      if (typeof address === 'string') {
-        return JSON.parse(address);
-      }
-      return address || {};
-    } catch (e) {
-      // Return empty object if parsing fails
-      return {};
+      setLoading(true);
+      setError(null);
+      
+      // Replace 'your_view_name' with the actual name of your database view
+      let query = supabase
+        .from('order_details_view') // Update this to your actual view name
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const { data, error: ordersError } = await query;
+
+      if (ordersError) throw ordersError;
+
+      // Group the flat data into structured orders
+      const groupedOrders = groupOrders(data || []);
+      setOrders(groupedOrders);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+      console.error('Error fetching orders:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Fetch orders
+  // Fetch orders on component mount
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        let query = supabase
-          .from('orders')
-          .select(`
-            *,
-            order_items (
-              *,
-              product:products (
-                id,
-                name,
-                price,
-                images
-              )
-            ),
-            user:user_profiles (
-              full_name,
-              email
-            )
-          `)
-          .order('created_at', { ascending: false });
-
-        // Apply filters
-        if (statusFilter !== 'all') {
-          query = query.eq('status', statusFilter);
-        }
-
-        if (searchTerm) {
-          query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
-        }
-
-        const { data, error: ordersError } = await query;
-
-        if (ordersError) throw ordersError;
-
-        setOrders(data || []);
-      } catch (err) {
-        // Handle error silently
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, [statusFilter, searchTerm]);
+    if (!propOrders) {
+      fetchOrders();
+    }
+  }, [propOrders]);
 
   // Update order status
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
@@ -242,7 +214,8 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
     } catch (err) {
-      // Handle error silently
+      console.error('Error updating order status:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update order status');
     }
   };
 
@@ -263,7 +236,8 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
       // Remove from local state
       setOrders(orders.filter(order => order.id !== orderId));
     } catch (err) {
-      // Handle error silently
+      console.error('Error deleting order:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete order');
     }
   };
 
@@ -292,53 +266,7 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
         <p>{error}</p>
         <button
-          onClick={() => {
-            // Re-fetch orders on retry
-            const fetchOrders = async () => {
-              try {
-                setLoading(true);
-                setError(null);
-                let query = supabase
-                  .from('orders')
-                  .select(`
-                    *,
-                    order_items (
-                      *,
-                      product:products (
-                        id,
-                        name,
-                        price,
-                        images
-                      )
-                    ),
-                    user:user_profiles (
-                      full_name,
-                      email
-                    )
-                  `)
-                  .order('created_at', { ascending: false });
-
-                if (statusFilter !== 'all') {
-                  query = query.eq('status', statusFilter);
-                }
-
-                if (searchTerm) {
-                  query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
-                }
-
-                const { data, error: ordersError } = await query;
-
-                if (ordersError) throw ordersError;
-
-                setOrders(data || []);
-              } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to fetch orders');
-              } finally {
-                setLoading(false);
-              }
-            };
-            fetchOrders();
-          }}
+          onClick={fetchOrders}
           className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
         >
           Retry
@@ -352,52 +280,7 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <h2 className="text-xl font-bold">Order Management</h2>
         <button
-          onClick={() => {
-            const fetchOrders = async () => {
-              try {
-                setLoading(true);
-                setError(null);
-                let query = supabase
-                  .from('orders')
-                  .select(`
-                    *,
-                    order_items (
-                      *,
-                      product:products (
-                        id,
-                        name,
-                        price,
-                        images
-                      )
-                    ),
-                    user:user_profiles (
-                      full_name,
-                      email
-                    )
-                  `)
-                  .order('created_at', { ascending: false });
-
-                if (statusFilter !== 'all') {
-                  query = query.eq('status', statusFilter);
-                }
-
-                if (searchTerm) {
-                  query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
-                }
-
-                const { data, error: ordersError } = await query;
-
-                if (ordersError) throw ordersError;
-
-                setOrders(data || []);
-              } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to fetch orders');
-              } finally {
-                setLoading(false);
-              }
-            };
-            fetchOrders();
-          }}
+          onClick={fetchOrders}
           disabled={loading}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 w-full sm:w-auto"
         >
@@ -438,52 +321,7 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
             {orders.length === 0 ? 'No orders found' : 'No orders match your search criteria'}
           </p>
           <button
-            onClick={() => {
-              const fetchOrders = async () => {
-                try {
-                  setLoading(true);
-                  setError(null);
-                  let query = supabase
-                    .from('orders')
-                    .select(`
-                      *,
-                      order_items (
-                        *,
-                        product:products (
-                          id,
-                          name,
-                          price,
-                          images
-                        )
-                      ),
-                      user:user_profiles (
-                        full_name,
-                        email
-                      )
-                    `)
-                    .order('created_at', { ascending: false });
-
-                  if (statusFilter !== 'all') {
-                    query = query.eq('status', statusFilter);
-                  }
-
-                  if (searchTerm) {
-                    query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
-                  }
-
-                  const { data, error: ordersError } = await query;
-
-                  if (ordersError) throw ordersError;
-
-                  setOrders(data || []);
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : 'Failed to fetch orders');
-                } finally {
-                  setLoading(false);
-                }
-              };
-              fetchOrders();
-            }}
+            onClick={fetchOrders}
             className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
             Refresh Orders
@@ -784,4 +622,4 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
   );
 };
 
-export default AdminOrders; 
+export default AdminOrders;
