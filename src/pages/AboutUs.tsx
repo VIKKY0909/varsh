@@ -67,6 +67,7 @@ const AboutUs = () => {
       </div>
 
       {/* Story Section */}
+      {/* Story Section */}
       <div className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -74,17 +75,23 @@ const AboutUs = () => {
               <h2 className="text-3xl font-bold text-mahogany mb-6">Our Story</h2>
               <div className="space-y-4 text-gray-700 text-lg leading-relaxed">
                 <p>
-                  Founded in 2020, Varsh Ethnic Wears was born from a deep love for India's rich cultural heritage 
-                  and a vision to make authentic ethnic wear accessible to women everywhere.
+                  We didn't just start a label—we started an <span className="font-semibold text-mahogany">एहसास</span>. 
+                  A feeling that every skin tone deserves to shine. A belief that <span className="font-semibold text-mahogany">सुंदरता</span> isn't one-size-fits-all.
                 </p>
                 <p>
-                  Our journey began when our founder, Priya Sharma, discovered the incredible craftsmanship of 
-                  artisans across India during her travels. She realized that these beautiful creations deserved 
-                  a wider audience.
+                  We're Vivek, Varsha, and Ayush—three friends who grew up surrounded by <span className="font-semibold text-mahogany">रंग, रिवाज़, and रूट्स</span>. 
+                  And we wanted to bring all of that into fashion that feels like <span className="font-semibold text-mahogany">अपनापन</span>.
                 </p>
                 <p>
-                  Today, we work directly with over 50 skilled artisans from different regions of India, 
-                  bringing you handcrafted pieces that tell stories of tradition, culture, and beauty.
+                  Our kurtis are not just stitched for style—they carry <span className="font-semibold text-mahogany">परंपरा</span> with a touch of today. 
+                  From soft cottons to vibrant prints, from festive <span className="font-semibold text-mahogany">जश्न</span> to daily comfort—each piece is made with love for 
+                  <span className="font-semibold text-mahogany">हर रंग की त्वचा</span> and <span className="font-semibold text-mahogany">हर दिल का अंदाज़</span>.
+                </p>
+                <p className="text-xl font-semibold text-mahogany">
+                  This is not just ethnic wear. This is your story, <span className="text-rose-gold">आपकी पहचान</span>.
+                </p>
+                <p className="text-lg font-medium text-copper">
+                  Style for Every Skin. Designed for Every Soul.
                 </p>
               </div>
             </div>
@@ -92,26 +99,26 @@ const AboutUs = () => {
               <div className="space-y-4">
                 <div className="flex items-center">
                   <Star className="w-6 h-6 text-rose-gold mr-3" />
-                  <span className="text-gray-700">Direct partnership with artisans</span>
+                  <span className="text-gray-700">Fashion that feels like <span className="font-medium">अपनापन</span></span>
                 </div>
                 <div className="flex items-center">
                   <Star className="w-6 h-6 text-rose-gold mr-3" />
-                  <span className="text-gray-700">Authentic ethnic wear from across India</span>
+                  <span className="text-gray-700">Celebrating every skin tone</span>
                 </div>
                 <div className="flex items-center">
                   <Star className="w-6 h-6 text-rose-gold mr-3" />
-                  <span className="text-gray-700">Premium quality materials</span>
+                  <span className="text-gray-700"><span className="font-medium">परंपरा</span> with a touch of today</span>
                 </div>
                 <div className="flex items-center">
                   <Star className="w-6 h-6 text-rose-gold mr-3" />
-                  <span className="text-gray-700">Sustainable and ethical practices</span>
+                  <span className="text-gray-700">Made with love for every style</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
+      
       {/* Stats Section */}
       {/* <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
