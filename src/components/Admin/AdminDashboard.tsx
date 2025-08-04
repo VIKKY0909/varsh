@@ -190,76 +190,104 @@ const AdminDashboard = () => {
         throw productsError;
       }
 
-      // Fetch orders from admin_orders_flat view
+      // Fetch orders with order items
       const { data: ordersData, error: ordersError } = await supabase
-        .from('admin_orders_flat')
-        .select('*')
+        .from('orders')
+        .select(`
+          *,
+          order_items(
+            id,
+            quantity,
+            size,
+            price,
+            product_id,
+            products!order_items_product_id_fkey(
+              id,
+              name,
+              images
+            )
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (ordersError) {
-        console.error('Error fetching orders:', ordersError);
       }
 
-      // Group orders by order_id to handle multiple items per order
-      const groupedOrders = ordersData?.reduce((acc: any, order: any) => {
-        if (!acc[order.order_id]) {
-          acc[order.order_id] = {
-            id: order.order_id,
-            order_number: order.order_number,
-            total_amount: parseFloat(order.total_amount),
-            status: order.status,
-            created_at: order.created_at,
-            user_id: order.user_id,
-            payment_status: order.payment_status,
-            shipping_cost: parseFloat(order.shipping_cost),
-            tax_amount: parseFloat(order.tax_amount),
-            discount_amount: parseFloat(order.discount_amount),
-            notes: order.notes,
-            estimated_delivery: order.estimated_delivery,
-            tracking_number: order.tracking_number,
-            canceled: order.canceled,
-            razorpay_order_id: order.razorpay_order_id,
-            razorpay_payment_id: order.razorpay_payment_id,
-            payment_timestamp: order.payment_timestamp,
-            estimated_delivery_day: order.estimated_delivery_day,
-            days_until_delivery: order.days_until_delivery,
-            shipping_address: order.shipping_address ? JSON.parse(order.shipping_address) : {},
-            order_items: [],
-            user: {
-              email: order.user_email,
-              user_profiles: {
-                full_name: order.user_full_name,
-                phone: order.user_phone,
-                gender: order.user_gender,
-                date_of_birth: order.user_date_of_birth
-              }
-            }
-          };
-        }
-        
-        if (order.order_item_id && order.product_name) {
-          acc[order.order_id].order_items.push({
-            id: order.order_item_id,
-            quantity: order.quantity,
-            size: order.size,
-            price: parseFloat(order.item_price),
-            product_id: order.product_id,
-            product: {
-              name: order.product_name,
-              images: order.product_images || [],
-              price: parseFloat(order.product_current_price)
-            }
-          });
-        }
-        
-        return acc;
-      }, {}) || {};
+      // Get real user emails using the database function
+      let userEmailsMap = new Map();
+      let completeUsersData: User[] = [];
+      
+      try {
+        // Use the new function that gets ALL users
+        const { data: adminUserData, error: adminUserError } = await supabase
+          .rpc('get_all_users_for_admin');
 
-      const ordersWithUserData = Object.values(groupedOrders) as Order[];
+        if (!adminUserError && adminUserData) {
+          adminUserData.forEach((user: any) => {
+            userEmailsMap.set(user.user_id, user.email || 'N/A');
+          });
+          
+          completeUsersData = adminUserData.map((user: any) => ({
+            id: user.user_id,
+            full_name: user.full_name || 'Not set',
+            email: user.email || 'N/A',
+            phone: user.phone || 'Not set',
+            gender: user.gender || 'Not set',
+            date_of_birth: user.date_of_birth || 'N/A',
+            is_admin: user.is_admin || false,
+            created_at: user.created_at,
+            profile_status: user.profile_status || 'Unknown'
+          }));
+        } else {
+          // Fallback: get from user_profiles
+          const { data: userProfilesData, error: userProfilesError } = await supabase
+        .from('user_profiles')
+            .select('*');
+
+          if (!userProfilesError && userProfilesData) {
+            userProfilesData.forEach(profile => {
+              userEmailsMap.set(profile.user_id, profile.email || 'N/A');
+            });
+            
+            completeUsersData = userProfilesData.map((profile: any) => ({
+              id: profile.user_id,
+              full_name: profile.full_name || 'N/A',
+              email: profile.email || 'N/A',
+              phone: profile.phone || 'N/A',
+              gender: profile.gender || 'N/A',
+              date_of_birth: profile.date_of_birth || 'N/A',
+              is_admin: profile.is_admin || false,
+              created_at: profile.created_at,
+              profile_status: 'Profile Complete'
+            }));
+          }
+        }
+      } catch (error) {
+        // Continue with empty data
+      }
+
+      // Merge orders with complete user data
+      const ordersWithUserData = ordersData?.map(order => {
+        const userEmail = userEmailsMap.get(order.user_id) || 'N/A';
+        
+        return {
+          ...order,
+          user: {
+            email: userEmail,
+            user_profiles: {
+              full_name: completeUsersData.find((u: any) => u.id === order.user_id)?.full_name || 'N/A',
+              phone: completeUsersData.find((u: any) => u.id === order.user_id)?.phone || 'N/A',
+              gender: completeUsersData.find((u: any) => u.id === order.user_id)?.gender || 'N/A',
+              date_of_birth: completeUsersData.find((u: any) => u.id === order.user_id)?.date_of_birth || 'N/A',
+              is_admin: completeUsersData.find((u: any) => u.id === order.user_id)?.is_admin || false
+            }
+          }
+        };
+      }) || [];
 
       setProducts(productsData || []);
       setOrders(ordersWithUserData || []);
-      setUsers([]); // Users data is now included in the orders view
+      setUsers(completeUsersData || []);
 
       // Calculate stats
       const totalRevenue = ordersWithUserData?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
@@ -270,7 +298,7 @@ const AdminDashboard = () => {
         totalProducts: productsData?.length || 0,
         totalOrders: ordersWithUserData?.length || 0,
         totalRevenue,
-        totalUsers: ordersWithUserData?.length || 0,
+        totalUsers: completeUsersData?.length || 0,
         pendingOrders,
         lowStockProducts
       });
