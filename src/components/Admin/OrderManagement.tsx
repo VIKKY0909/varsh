@@ -3,56 +3,56 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Eye, ChevronLeft, ChevronRight, X, Phone, Mail, MapPin, Package, Calendar, DollarSign, CreditCard } from 'lucide-react';
 
+interface OrderItem {
+  order_item_id: string;
+  quantity: number;
+  size: string;
+  item_price: string;
+  product_id: string;
+  product_name: string;
+  product_images: string[];
+  product_current_price: string;
+}
+
 interface OrderDetails {
-  id: string;
+  idx: number;
+  order_id: string;
   order_number: string;
-  total_amount: number;
+  total_amount: string;
   status: string;
   created_at: string;
-  user_id: string;
   payment_status: string;
-  shipping_cost: number;
-  tax_amount: number;
-  discount_amount: number;
+  shipping_cost: string;
+  tax_amount: string;
+  discount_amount: string;
   notes: string;
   estimated_delivery: string;
-  tracking_number: string;
+  tracking_number: string | null;
   canceled: boolean;
-  // Razorpay fields
-  razorpay_order_id?: string;
-  razorpay_payment_id?: string;
-  shipping_address: {
-    full_name: string;
-    phone: string;
-    address_line_1: string;
-    address_line_2?: string;
-    city: string;
-    state: string;
-    postal_code: string;
-    country: string;
-  };
-  order_items: {
-    id: string;
-    quantity: number;
-    size: string;
-    price: number;
-    product_id: string;
-    product: {
-      id: string;
-      name: string;
-      images: string[];
-      price: number;
-    };
-  }[];
-  user: {
-    email: string;
-    user_profiles: {
-      full_name: string;
-      phone: string;
-      gender: string;
-      date_of_birth: string;
-    };
-  };
+  razorpay_order_id: string | null;
+  razorpay_payment_id: string | null;
+  shipping_address: string; // JSON string
+  user_id: string;
+  order_item_id: string | null;
+  quantity: number | null;
+  size: string | null;
+  item_price: string | null;
+  product_id: string | null;
+  product_name: string | null;
+  product_images: string[] | null;
+  product_current_price: string | null;
+  user_email: string;
+  user_full_name: string | null;
+  user_phone: string | null;
+  user_gender: string | null;
+  user_date_of_birth: string | null;
+  payment_timestamp: string | null;
+  estimated_delivery_day: string | null;
+  days_until_delivery: number | null;
+}
+
+interface GroupedOrder extends OrderDetails {
+  items: OrderItem[];
 }
 
 interface OrderManagementProps {
@@ -65,34 +65,19 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
   const [orders, setOrders] = useState<OrderDetails[]>(propOrders || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<GroupedOrder | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Fetch orders with complete data
+  // Fetch orders from the admin_orders_flat_view
   const fetchOrders = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Fetch orders with order items
       const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items(
-            id,
-            quantity,
-            size,
-            price,
-            product_id,
-            products!order_items_product_id_fkey(
-              id,
-              name,
-              images
-            )
-          )
-        `)
+        .from('admin_orders_flat_view')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (ordersError) {
@@ -104,63 +89,7 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
         return;
       }
 
-      // Extract unique user IDs
-      const userIds = [...new Set(ordersData.map(order => order.user_id))];
-
-      // Get user emails using the database function
-      let userEmailsMap = new Map();
-      
-      try {
-        const { data: userEmailsData, error: userEmailsError } = await supabase
-          .rpc('get_user_emails_for_admin', { user_ids: userIds });
-
-        if (!userEmailsError && userEmailsData) {
-          userEmailsData.forEach((user: any) => {
-            userEmailsMap.set(user.user_id, user.email || 'N/A');
-          });
-        }
-      } catch (error) {
-        // Continue with empty map if function fails
-      }
-
-      // Get user profiles for additional information
-      let userProfilesMap = new Map();
-      
-      try {
-        const { data: userProfilesData, error: userProfilesError } = await supabase
-          .from('user_profiles')
-          .select('user_id, full_name, phone, gender, date_of_birth')
-          .in('user_id', userIds);
-
-        if (!userProfilesError && userProfilesData) {
-          userProfilesData.forEach(profile => {
-            userProfilesMap.set(profile.user_id, profile);
-          });
-        }
-      } catch (error) {
-        // Continue with empty map if query fails
-      }
-
-      // Merge orders with user data
-      const completeOrders = ordersData.map(order => {
-        const userEmail = userEmailsMap.get(order.user_id) || 'N/A';
-        const userProfile = userProfilesMap.get(order.user_id);
-        
-        return {
-          ...order,
-          user: {
-            email: userEmail,
-            user_profiles: {
-              full_name: userProfile?.full_name || 'N/A',
-              phone: userProfile?.phone || 'N/A',
-              gender: userProfile?.gender || 'N/A',
-              date_of_birth: userProfile?.date_of_birth || 'N/A'
-            }
-          }
-        };
-      });
-
-      setOrders(completeOrders);
+      setOrders(ordersData);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch orders');
@@ -216,13 +145,13 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
       // Update local state
       setOrders((prevOrders: OrderDetails[]) => 
         prevOrders.map((order: OrderDetails) => 
-          order.id === orderId ? { ...order, status: newStatus } : order
+          order.order_id === orderId ? { ...order, status: newStatus } : order
         )
       );
 
       // Update selected order if it's the one being updated
-      if (selectedOrder?.id === orderId) {
-        setSelectedOrder((prev: OrderDetails | null) => prev ? { ...prev, status: newStatus } : null);
+      if (selectedOrder?.order_id === orderId) {
+        setSelectedOrder((prev: GroupedOrder | null) => prev ? { ...prev, status: newStatus } : null);
       }
 
     } catch (err) {
@@ -242,10 +171,10 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
       
       // Remove from local state
       setOrders((prevOrders: OrderDetails[]) => 
-        prevOrders.filter((order: OrderDetails) => order.id !== orderId)
+        prevOrders.filter((order: OrderDetails) => order.order_id !== orderId)
       );
       
-      if (selectedOrder?.id === orderId) {
+      if (selectedOrder?.order_id === orderId) {
         setSelectedOrder(null);
       }
     } catch (err) {
@@ -255,12 +184,36 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
     }
   };
 
-  const filteredOrders = orders.filter((order: OrderDetails) => {
+  // Group orders by order_id to handle multiple items per order
+  const groupedOrders = orders.reduce((acc, order) => {
+    if (!acc[order.order_id]) {
+      acc[order.order_id] = {
+        ...order,
+        items: []
+      } as GroupedOrder;
+    }
+    
+    if (order.order_item_id && order.product_name) {
+      acc[order.order_id].items.push({
+        order_item_id: order.order_item_id,
+        quantity: order.quantity || 0,
+        size: order.size || '',
+        item_price: order.item_price || '0',
+        product_id: order.product_id || '',
+        product_name: order.product_name,
+        product_images: order.product_images || [],
+        product_current_price: order.product_current_price || '0'
+      });
+    }
+    
+    return acc;
+  }, {} as Record<string, GroupedOrder>);
+
+  const filteredOrders = Object.values(groupedOrders).filter((order: GroupedOrder) => {
     const matchesSearch = 
       order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.user?.user_profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.shipping_address?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      order.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.user_full_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
@@ -286,6 +239,14 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
       case 'failed': return 'bg-red-100 text-red-800';
       case 'refunded': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const parseShippingAddress = (addressString: string) => {
+    try {
+      return JSON.parse(addressString);
+    } catch {
+      return null;
     }
   };
 
@@ -390,10 +351,10 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.map((order) => (
-              <tr key={order.id} className="border-b hover:bg-gray-50">
+            {filteredOrders.map((order: GroupedOrder) => (
+              <tr key={order.order_id} className="border-b hover:bg-gray-50">
                 <td className="py-3 px-4">
-                  <div className="font-medium text-mahogany">{order.order_number || order.id.slice(0, 8).toUpperCase()}</div>
+                  <div className="font-medium text-mahogany">{order.order_number}</div>
                   {order.razorpay_order_id && (
                     <div className="text-xs text-gray-500 flex items-center gap-1">
                       <CreditCard className="w-3 h-3" />
@@ -403,21 +364,21 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
                 </td>
                 <td className="py-3 px-4">
                   <div>
-                    <div className="font-medium">{order.user?.user_profiles?.full_name || order.shipping_address?.full_name || 'N/A'}</div>
-                    <div className="text-sm text-gray-600">{order.user?.email || 'N/A'}</div>
+                    <div className="font-medium">{order.user_full_name || 'N/A'}</div>
+                    <div className="text-sm text-gray-600">{order.user_email}</div>
                   </div>
                 </td>
                 <td className="py-3 px-4">
                   <div className="text-sm">
                     <div className="flex items-center gap-1 text-gray-600">
                       <Phone className="w-3 h-3" />
-                      {order.user?.user_profiles?.phone || order.shipping_address?.phone || 'N/A'}
+                      {order.user_phone || 'N/A'}
                     </div>
                   </div>
                 </td>
                 <td className="py-3 px-4">
-                  <div className="font-semibold">₹{order.total_amount.toLocaleString()}</div>
-                  {order.shipping_cost > 0 && (
+                  <div className="font-semibold">₹{parseFloat(order.total_amount).toLocaleString()}</div>
+                  {parseFloat(order.shipping_cost) > 0 && (
                     <div className="text-xs text-gray-500">+₹{order.shipping_cost} shipping</div>
                   )}
                 </td>
@@ -435,18 +396,18 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
                 </td>
                 <td className="py-3 px-4">
                   <div className="text-sm">
-                    {order.order_items && order.order_items.length > 0 ? (
+                    {order.items && order.items.length > 0 ? (
                       <div>
-                        <div className="font-medium">{order.order_items.length} item{order.order_items.length !== 1 ? 's' : ''}</div>
+                        <div className="font-medium">{order.items.length} item{order.items.length !== 1 ? 's' : ''}</div>
                         <div className="text-gray-600">
-                                                     {order.order_items.slice(0, 2).map((item, index) => (
-                             <div key={item.id || index}>
-                               {item.products?.name || 'Unknown Product'} x{item.quantity}
-                             </div>
-                           ))}
-                          {order.order_items.length > 2 && (
+                          {order.items.slice(0, 2).map((item, index) => (
+                            <div key={item.order_item_id || index}>
+                              {item.product_name || 'Unknown Product'} x{item.quantity}
+                            </div>
+                          ))}
+                          {order.items.length > 2 && (
                             <span className="text-xs text-gray-500">
-                              +{order.order_items.length - 2} more
+                              +{order.items.length - 2} more
                             </span>
                           )}
                         </div>
@@ -459,7 +420,7 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
                 <td className="py-3 px-4">
                   <select
                     value={order.status}
-                    onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                    onChange={(e) => handleStatusUpdate(order.order_id, e.target.value)}
                     disabled={loading}
                     className={`px-3 py-1 rounded-full text-xs font-medium border-0 ${getStatusColor(order.status)}`}
                   >
@@ -488,7 +449,7 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
                     </button>
                     {onDeleteOrder && (
                       <button
-                        onClick={() => handleDeleteOrder(order.id)}
+                        onClick={() => handleDeleteOrder(order.order_id)}
                         disabled={loading}
                         className="p-1 text-gray-600 hover:text-red-600 disabled:opacity-50"
                         title="Delete Order"
@@ -524,8 +485,8 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
                 <div>
                   <h4 className="font-semibold text-gray-800 mb-3">Order Information</h4>
                   <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">Order ID:</span> {selectedOrder.id}</div>
-                    <div><span className="font-medium">Order Number:</span> {selectedOrder.order_number || 'N/A'}</div>
+                    <div><span className="font-medium">Order ID:</span> {selectedOrder.order_id}</div>
+                    <div><span className="font-medium">Order Number:</span> {selectedOrder.order_number}</div>
                     <div><span className="font-medium">Status:</span> 
                       <span className={`ml-2 px-2 py-1 rounded-full text-xs ${getStatusColor(selectedOrder.status)}`}>
                         {selectedOrder.status}
@@ -536,7 +497,7 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
                         {selectedOrder.payment_status}
                       </span>
                     </div>
-                    <div><span className="font-medium">Total Amount:</span> ₹{selectedOrder.total_amount.toLocaleString()}</div>
+                    <div><span className="font-medium">Total Amount:</span> ₹{parseFloat(selectedOrder.total_amount).toLocaleString()}</div>
                     <div><span className="font-medium">Shipping Cost:</span> ₹{selectedOrder.shipping_cost}</div>
                     <div><span className="font-medium">Tax Amount:</span> ₹{selectedOrder.tax_amount}</div>
                     <div><span className="font-medium">Discount:</span> ₹{selectedOrder.discount_amount}</div>
@@ -544,8 +505,17 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
                     {selectedOrder.estimated_delivery && (
                       <div><span className="font-medium">Estimated Delivery:</span> {new Date(selectedOrder.estimated_delivery).toLocaleDateString()}</div>
                     )}
+                    {selectedOrder.estimated_delivery_day && (
+                      <div><span className="font-medium">Delivery Day:</span> {selectedOrder.estimated_delivery_day}</div>
+                    )}
+                    {selectedOrder.days_until_delivery !== null && (
+                      <div><span className="font-medium">Days Until Delivery:</span> {selectedOrder.days_until_delivery}</div>
+                    )}
                     {selectedOrder.tracking_number && (
                       <div><span className="font-medium">Tracking Number:</span> {selectedOrder.tracking_number}</div>
+                    )}
+                    {selectedOrder.payment_timestamp && (
+                      <div><span className="font-medium">Payment Time:</span> {new Date(selectedOrder.payment_timestamp).toLocaleString()}</div>
                     )}
                   </div>
 
@@ -572,14 +542,14 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
                 <div>
                   <h4 className="font-semibold text-gray-800 mb-3">Customer Information</h4>
                   <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">Name:</span> {selectedOrder.user?.user_profiles?.full_name || selectedOrder.shipping_address?.full_name || 'N/A'}</div>
-                    <div><span className="font-medium">Email:</span> {selectedOrder.user?.email || 'N/A'}</div>
-                    <div><span className="font-medium">Phone:</span> {selectedOrder.user?.user_profiles?.phone || selectedOrder.shipping_address?.phone || 'N/A'}</div>
-                    {selectedOrder.user?.user_profiles?.gender && (
-                      <div><span className="font-medium">Gender:</span> {selectedOrder.user.user_profiles.gender}</div>
+                    <div><span className="font-medium">Name:</span> {selectedOrder.user_full_name || 'N/A'}</div>
+                    <div><span className="font-medium">Email:</span> {selectedOrder.user_email}</div>
+                    <div><span className="font-medium">Phone:</span> {selectedOrder.user_phone || 'N/A'}</div>
+                    {selectedOrder.user_gender && (
+                      <div><span className="font-medium">Gender:</span> {selectedOrder.user_gender}</div>
                     )}
-                    {selectedOrder.user?.user_profiles?.date_of_birth && (
-                      <div><span className="font-medium">Date of Birth:</span> {selectedOrder.user.user_profiles.date_of_birth}</div>
+                    {selectedOrder.user_date_of_birth && (
+                      <div><span className="font-medium">Date of Birth:</span> {selectedOrder.user_date_of_birth}</div>
                     )}
                   </div>
 
@@ -589,19 +559,26 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
                       <MapPin className="w-4 h-4" />
                       Shipping Address
                     </h4>
-                    <div className="space-y-1 text-sm">
-                      <div>{selectedOrder.shipping_address?.full_name}</div>
-                      <div>{selectedOrder.shipping_address?.address_line_1}</div>
-                      {selectedOrder.shipping_address?.address_line_2 && (
-                        <div>{selectedOrder.shipping_address.address_line_2}</div>
-                      )}
-                      <div>{selectedOrder.shipping_address?.city}, {selectedOrder.shipping_address?.state} {selectedOrder.shipping_address?.postal_code}</div>
-                      <div>{selectedOrder.shipping_address?.country}</div>
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <Phone className="w-3 h-3" />
-                        {selectedOrder.shipping_address?.phone}
-                      </div>
-                    </div>
+                    {(() => {
+                      const address = parseShippingAddress(selectedOrder.shipping_address);
+                      return address ? (
+                        <div className="space-y-1 text-sm">
+                          <div>{address.full_name}</div>
+                          <div>{address.address_line_1}</div>
+                          {address.address_line_2 && (
+                            <div>{address.address_line_2}</div>
+                          )}
+                          <div>{address.city}, {address.state} {address.postal_code}</div>
+                          <div>{address.country}</div>
+                          <div className="flex items-center gap-1 text-gray-600">
+                            <Phone className="w-3 h-3" />
+                            {address.phone}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">Address not available</div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -621,26 +598,26 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedOrder.order_items?.map((item) => (
-                        <tr key={item.id} className="border-b">
+                      {selectedOrder.items?.map((item: OrderItem) => (
+                        <tr key={item.order_item_id} className="border-b">
                           <td className="py-2 px-4">
-                                                         <div className="flex items-center gap-3">
-                               {item.products?.images && item.products.images.length > 0 && (
-                                 <img 
-                                   src={item.products.images[0]} 
-                                   alt={item.products.name}
-                                   className="w-12 h-12 object-cover rounded"
-                                 />
-                               )}
-                               <div>
-                                 <div className="font-medium">{item.products?.name || 'Unknown Product'}</div>
-                               </div>
-                             </div>
+                            <div className="flex items-center gap-3">
+                              {item.product_images && item.product_images.length > 0 && (
+                                <img 
+                                  src={item.product_images[0]} 
+                                  alt={item.product_name}
+                                  className="w-12 h-12 object-cover rounded"
+                                />
+                              )}
+                              <div>
+                                <div className="font-medium">{item.product_name || 'Unknown Product'}</div>
+                              </div>
+                            </div>
                           </td>
                           <td className="py-2 px-4">{item.size}</td>
                           <td className="py-2 px-4">{item.quantity}</td>
-                          <td className="py-2 px-4">₹{item.price}</td>
-                          <td className="py-2 px-4 font-medium">₹{(item.price * item.quantity).toLocaleString()}</td>
+                          <td className="py-2 px-4">₹{item.item_price}</td>
+                          <td className="py-2 px-4 font-medium">₹{(parseFloat(item.item_price || '0') * (item.quantity || 0)).toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
