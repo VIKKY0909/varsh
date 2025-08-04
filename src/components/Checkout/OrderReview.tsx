@@ -97,7 +97,7 @@ const OrderReview: React.FC<OrderReviewProps> = ({
         </div>
 
         {/* Payment Method */}
-        <div>
+        {/* <div>
           <div className="flex items-center gap-2 mb-4">
             <CreditCard className="w-5 h-5 text-rose-gold" />
             <h3 className="text-lg font-semibold text-mahogany">Payment Method</h3>
@@ -110,7 +110,7 @@ const OrderReview: React.FC<OrderReviewProps> = ({
               </p>
             )}
           </div>
-        </div>
+        </div> */}
 
         {/* Order Notes */}
         <div>
@@ -150,26 +150,20 @@ const OrderReview: React.FC<OrderReviewProps> = ({
           </div>
         </div>
 
-        {/* Terms and Conditions */}
+        {/* Important Notice */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              id="terms"
-              className="mt-1 h-4 w-4 text-rose-gold focus:ring-rose-gold border-gray-300 rounded"
-              required
-            />
-            <label htmlFor="terms" className="text-sm text-blue-800">
-              I agree to the{' '}
-              <a href="/terms" className="underline hover:text-blue-900">
-                Terms and Conditions
-              </a>{' '}
-              and{' '}
-              <a href="/privacy" className="underline hover:text-blue-900">
-                Privacy Policy
-              </a>
-              . I understand that this order is final and cannot be cancelled once placed.
-            </label>
+            <div className="text-blue-600">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-medium text-blue-800">Important Information</h4>
+              <p className="text-blue-700 text-sm mt-1">
+                Please review your order details carefully. You'll be able to select your payment method and complete the purchase in the next step.
+              </p>
+            </div>
           </div>
         </div>
       </div>

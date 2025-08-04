@@ -144,7 +144,7 @@ const TermsAndConditions = () => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <p className="mb-2"><strong>Varsh Ethnic Wears</strong></p>
               <p className="mb-2">Email: support@varsh.com</p>
-              <p className="mb-2">Phone: +91-XXXXXXXXXX</p>
+              <p className="mb-2">Phone: +91-9876543210</p>
               <p>Address: Mumbai, Maharashtra, India</p>
             </div>
 

@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { 
+  validateSignUpForm, 
+  validateSignInForm, 
+  validateField, 
+  getPasswordStrength 
+} from '../lib/validation';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -15,6 +22,7 @@ const Auth = () => {
     phone: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -25,49 +33,57 @@ const Auth = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Mark field as touched
+    setTouched(prev => ({ ...prev, [name]: true }));
+    
+    // Real-time validation for password strength
+    if (name === 'password' && !isLogin) {
+      const passwordStrength = getPasswordStrength(value);
+      // You can use passwordStrength for UI feedback
+    }
+    
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
+  const handleBlur = (fieldName: string) => {
+    setTouched(prev => ({ ...prev, [fieldName]: true }));
+    
+    // Validate field on blur
+    const error = validateField(fieldName, formData[fieldName as keyof typeof formData], formData);
+    if (error) {
+      setErrors(prev => ({ ...prev, [fieldName]: error }));
+    } else {
+      setErrors(prev => ({ ...prev, [fieldName]: '' }));
+    }
+  };
+
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    let validationResult;
+    
+    if (isLogin) {
+      validationResult = validateSignInForm({
+        email: formData.email,
+        password: formData.password
+      });
+    } else {
+      validationResult = validateSignUpForm(formData);
     }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
-    if (!isLogin) {
-      if (!formData.fullName) {
-        newErrors.fullName = 'Full name is required';
-      }
-
-      if (!formData.phone) {
-        newErrors.phone = 'Phone number is required';
-      } else if (!/^\d{10}$/.test(formData.phone)) {
-        newErrors.phone = 'Phone number must be 10 digits';
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    setErrors(validationResult.errors);
+    return validationResult.isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Mark all fields as touched
+    const allFields = isLogin ? ['email', 'password'] : ['email', 'password', 'confirmPassword', 'fullName', 'phone'];
+    const newTouched = allFields.reduce((acc, field) => ({ ...acc, [field]: true }), {});
+    setTouched(newTouched);
     
     if (!validateForm()) return;
 
@@ -91,6 +107,8 @@ const Auth = () => {
           // Show success message and switch to login
           setIsLogin(true);
           setFormData({ email: formData.email, password: '', confirmPassword: '', fullName: '', phone: '' });
+          setErrors({});
+          setTouched({});
           // You might want to show a success toast here
         }
       }
@@ -99,6 +117,54 @@ const Auth = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getPasswordStrengthIndicator = () => {
+    if (isLogin || !formData.password) return null;
+    
+    const strength = getPasswordStrength(formData.password);
+    const strengthColors = {
+      red: 'bg-red-500',
+      orange: 'bg-orange-500',
+      yellow: 'bg-yellow-500',
+      green: 'bg-green-500'
+    };
+    
+    return (
+      <div className="mt-2">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((level) => (
+              <div
+                key={level}
+                className={`h-1 w-8 rounded-full ${
+                  level <= strength.score ? strengthColors[strength.color as keyof typeof strengthColors] : 'bg-gray-200'
+                }`}
+              />
+            ))}
+          </div>
+          <span className={`text-xs font-medium ${
+            strength.color === 'red' ? 'text-red-600' :
+            strength.color === 'orange' ? 'text-orange-600' :
+            strength.color === 'yellow' ? 'text-yellow-600' :
+            'text-green-600'
+          }`}>
+            {strength.label}
+          </span>
+        </div>
+        <p className="text-xs text-gray-500">
+          Password must contain uppercase, lowercase, number, and special character
+        </p>
+      </div>
+    );
+  };
+
+  const getFieldError = (fieldName: string) => {
+    return touched[fieldName] && errors[fieldName];
+  };
+
+  const getFieldSuccess = (fieldName: string) => {
+    return touched[fieldName] && !errors[fieldName] && formData[fieldName as keyof typeof formData];
   };
 
   return (
@@ -123,7 +189,7 @@ const Auth = () => {
             {/* Full Name (Sign Up only) */}
             {!isLogin && (
               <div>
-                <label htmlFor="fullName\" className="block text-sm font-medium text-mahogany mb-2">
+                <label htmlFor="fullName" className="block text-sm font-medium text-mahogany mb-2">
                   Full Name
                 </label>
                 <div className="relative">
@@ -134,13 +200,23 @@ const Auth = () => {
                     type="text"
                     value={formData.fullName}
                     onChange={handleInputChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent ${
-                      errors.fullName ? 'border-red-500' : 'border-gray-300'
+                    onBlur={() => handleBlur('fullName')}
+                    className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent transition-colors ${
+                      getFieldError('fullName') ? 'border-red-500' :
+                      getFieldSuccess('fullName') ? 'border-green-500' : 'border-gray-300'
                     }`}
                     placeholder="Enter your full name"
                   />
+                  {getFieldSuccess('fullName') && (
+                    <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 w-5 h-5" />
+                  )}
+                  {getFieldError('fullName') && (
+                    <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 w-5 h-5" />
+                  )}
                 </div>
-                {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+                {getFieldError('fullName') && (
+                  <p className="text-red-500 text-sm mt-1">{getFieldError('fullName')}</p>
+                )}
               </div>
             )}
 
@@ -157,13 +233,23 @@ const Auth = () => {
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent ${
-                    errors.email ? 'border-red-500' : 'border-gray-300'
+                  onBlur={() => handleBlur('email')}
+                  className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent transition-colors ${
+                    getFieldError('email') ? 'border-red-500' :
+                    getFieldSuccess('email') ? 'border-green-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your email"
                 />
+                {getFieldSuccess('email') && (
+                  <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 w-5 h-5" />
+                )}
+                {getFieldError('email') && (
+                  <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 w-5 h-5" />
+                )}
               </div>
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              {getFieldError('email') && (
+                <p className="text-red-500 text-sm mt-1">{getFieldError('email')}</p>
+              )}
             </div>
 
             {/* Phone (Sign Up only) */}
@@ -180,13 +266,23 @@ const Auth = () => {
                     type="tel"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent ${
-                      errors.phone ? 'border-red-500' : 'border-gray-300'
+                    onBlur={() => handleBlur('phone')}
+                    className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent transition-colors ${
+                      getFieldError('phone') ? 'border-red-500' :
+                      getFieldSuccess('phone') ? 'border-green-500' : 'border-gray-300'
                     }`}
                     placeholder="Enter your phone number"
                   />
+                  {getFieldSuccess('phone') && (
+                    <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 w-5 h-5" />
+                  )}
+                  {getFieldError('phone') && (
+                    <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500 w-5 h-5" />
+                  )}
                 </div>
-                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+                {getFieldError('phone') && (
+                  <p className="text-red-500 text-sm mt-1">{getFieldError('phone')}</p>
+                )}
               </div>
             )}
 
@@ -203,8 +299,10 @@ const Auth = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent ${
-                    errors.password ? 'border-red-500' : 'border-gray-300'
+                  onBlur={() => handleBlur('password')}
+                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent transition-colors ${
+                    getFieldError('password') ? 'border-red-500' :
+                    getFieldSuccess('password') ? 'border-green-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your password"
                 />
@@ -216,7 +314,10 @@ const Auth = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+              {getFieldError('password') && (
+                <p className="text-red-500 text-sm mt-1">{getFieldError('password')}</p>
+              )}
+              {!isLogin && getPasswordStrengthIndicator()}
             </div>
 
             {/* Confirm Password (Sign Up only) */}
@@ -230,16 +331,27 @@ const Auth = () => {
                   <input
                     id="confirmPassword"
                     name="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent ${
-                      errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                    onBlur={() => handleBlur('confirmPassword')}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent transition-colors ${
+                      getFieldError('confirmPassword') ? 'border-red-500' :
+                      getFieldSuccess('confirmPassword') ? 'border-green-500' : 'border-gray-300'
                     }`}
                     placeholder="Confirm your password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
-                {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+                {getFieldError('confirmPassword') && (
+                  <p className="text-red-500 text-sm mt-1">{getFieldError('confirmPassword')}</p>
+                )}
               </div>
             )}
 
@@ -268,6 +380,7 @@ const Auth = () => {
                 onClick={() => {
                   setIsLogin(!isLogin);
                   setErrors({});
+                  setTouched({});
                   setFormData({ email: '', password: '', confirmPassword: '', fullName: '', phone: '' });
                 }}
                 className="ml-2 text-rose-gold hover:text-rose-800 font-medium transition-colors"

@@ -2,29 +2,23 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import crypto from 'crypto';
-import config from './config.js';
 
 const app = express();
 
-// Validate configuration on startup
-try {
-  config.validate();
-} catch (error) {
-  console.error('❌ Configuration error:', error.message);
-  process.exit(1);
+// Environment variables
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+const PORT = process.env.PORT || 3001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Validate required environment variables
+if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+  throw new Error('RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables are required');
 }
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// Get Razorpay configuration
-const razorpayConfig = config.getRazorpayConfig();
-
-console.log('✅ Razorpay configured with:', {
-  key_id: razorpayConfig.key_id,
-  mode: razorpayConfig.key_id.includes('test') ? 'TEST' : 'LIVE'
-});
 
 // Create Razorpay order endpoint
 app.post('/api/create-razorpay-order', async (req, res) => {
@@ -48,10 +42,10 @@ app.post('/api/create-razorpay-order', async (req, res) => {
     }
 
     // Validate currency
-    if (currency !== config.payment.currency) {
+    if (currency !== 'INR') {
       return res.status(400).json({
         success: false,
-        error: `Only ${config.payment.currency} currency is supported`
+        error: 'Only INR currency is supported'
       });
     }
 
@@ -61,19 +55,13 @@ app.post('/api/create-razorpay-order', async (req, res) => {
       currency: currency,
       receipt: receipt,
       notes: notes || {},
-      payment_capture: config.payment.auto_capture ? 1 : 0
+      payment_capture: 1
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${Buffer.from(`${razorpayConfig.key_id}:${razorpayConfig.key_secret}`).toString('base64')}`
+        'Authorization': `Basic ${Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64')}`
       },
-      timeout: config.payment.timeout
-    });
-
-    console.log('✅ Razorpay order created:', {
-      id: response.data.id,
-      amount: response.data.amount,
-      currency: response.data.currency
+      timeout: 10000
     });
 
     res.json({
@@ -82,8 +70,6 @@ app.post('/api/create-razorpay-order', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error creating Razorpay order:', error.response?.data || error.message);
-    
     // Handle specific Razorpay errors
     if (error.response?.status === 400) {
       return res.status(400).json({
@@ -99,28 +85,19 @@ app.post('/api/create-razorpay-order', async (req, res) => {
         error: 'Invalid Razorpay credentials'
       });
     }
-    
-    if (error.code === 'ECONNABORTED') {
-      return res.status(408).json({
-        success: false,
-        error: 'Request timeout. Please try again.'
-      });
-    }
-    
+
     res.status(500).json({
       success: false,
-      error: 'Failed to create Razorpay order',
-      details: error.response?.data || error.message
+      error: 'Internal server error'
     });
   }
 });
 
-// Verify payment signature endpoint
+// Verify payment endpoint
 app.post('/api/verify-payment', async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    // Validate required fields
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({
         success: false,
@@ -128,31 +105,25 @@ app.post('/api/verify-payment', async (req, res) => {
       });
     }
 
-    // Verify signature using crypto
-    const expectedSignature = crypto
-      .createHmac('sha256', razorpayConfig.key_secret)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+    // Verify signature
+    const text = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const signature = crypto
+      .createHmac('sha256', RAZORPAY_KEY_SECRET)
+      .update(text)
       .digest('hex');
 
-    const isValid = expectedSignature === razorpay_signature;
-
-    console.log('🔍 Payment verification:', {
-      order_id: razorpay_order_id,
-      payment_id: razorpay_payment_id,
-      isValid: isValid
-    });
+    const isValid = signature === razorpay_signature;
 
     res.json({
       success: true,
       isValid: isValid,
-      message: isValid ? 'Payment verified successfully' : 'Invalid payment signature'
+      message: isValid ? 'Payment verified successfully' : 'Payment verification failed'
     });
 
   } catch (error) {
-    console.error('❌ Error verifying payment:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to verify payment'
+      error: 'Internal server error'
     });
   }
 });
@@ -169,16 +140,11 @@ app.get('/api/payment-status/:payment_id', async (req, res) => {
       });
     }
 
-    // Fetch payment details from Razorpay
+    // Fetch payment status from Razorpay
     const response = await axios.get(`https://api.razorpay.com/v1/payments/${payment_id}`, {
       headers: {
-        'Authorization': `Basic ${Buffer.from(`${razorpayConfig.key_id}:${razorpayConfig.key_secret}`).toString('base64')}`
+        'Authorization': `Basic ${Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64')}`
       }
-    });
-
-    console.log('✅ Payment status fetched:', {
-      payment_id: payment_id,
-      status: response.data.status
     });
 
     res.json({
@@ -187,42 +153,31 @@ app.get('/api/payment-status/:payment_id', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error fetching payment status:', error.response?.data || error.message);
-    
     if (error.response?.status === 404) {
       return res.status(404).json({
         success: false,
         error: 'Payment not found'
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch payment status'
+      error: 'Internal server error'
     });
   }
 });
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    success: true,
     message: 'Server is running',
-    razorpay: {
-      configured: !!razorpayConfig.key_id && !!razorpayConfig.key_secret,
-      mode: razorpayConfig.key_id?.includes('test') ? 'TEST' : 'LIVE'
-    },
-    environment: config.server.environment
+    environment: NODE_ENV,
+    timestamp: new Date().toISOString()
   });
 });
 
 // Start server
-app.listen(config.server.port, () => {
-  console.log(`🚀 Server running on http://localhost:${config.server.port}`);
-  console.log('📋 Razorpay API endpoints:');
-  console.log(`  POST /api/create-razorpay-order`);
-  console.log(`  POST /api/verify-payment`);
-  console.log(`  GET  /api/payment-status/:payment_id`);
-  console.log(`  GET  /api/health`);
-  console.log(`🔧 Environment: ${config.server.environment}`);
+app.listen(PORT, () => {
+  // Server started successfully
 }); 

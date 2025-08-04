@@ -201,7 +201,6 @@ const Products = () => {
       }
 
     } catch (error) {
-      console.error('Error fetching products:', error);
       setError('Failed to load products. Please try again.');
     } finally {
       setLoading(false);
@@ -224,7 +223,7 @@ const Products = () => {
       const wishlistProductIds = new Set(data?.map(item => item.product_id) || []);
       setWishlistItems(wishlistProductIds);
     } catch (error) {
-      console.error('Error fetching wishlist:', error);
+      // Handle error silently
     }
   }, [user]);
 
@@ -243,7 +242,6 @@ const Products = () => {
       await addToCart(productId, sizes[0]);
       
     } catch (error) {
-      console.error('Error adding to cart:', error);
       setError('Failed to add item to cart. Please try again.');
     } finally {
       setTimeout(() => {
@@ -300,7 +298,6 @@ const Products = () => {
         setWishlistItems(prev => new Set([...prev, productId]));
       }
     } catch (error) {
-      console.error('Error updating wishlist:', error);
       setError('Failed to update wishlist. Please try again.');
     } finally {
       setProcessingWishlist(prev => {

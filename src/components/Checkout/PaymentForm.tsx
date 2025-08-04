@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Smartphone, Wallet, Shield, Lock, AlertCircle, CheckCircle } from 'lucide-react';
-import { RAZORPAY_CONFIG, initializeRazorpayCheckout, PaymentDetails } from '../../lib/razorpay';
+import { CheckCircle, AlertCircle, CreditCard, Smartphone, Globe, Lock, Shield } from 'lucide-react';
+import { initializeRazorpayCheckout } from '../../lib/razorpay';
 
 interface PaymentFormProps {
   paymentMethod: string;
   onPaymentMethodChange: (method: string) => void;
   total: number;
+  orderId?: string | null;
   customerInfo: {
     name: string;
     email: string;
@@ -17,29 +18,30 @@ interface PaymentFormProps {
     quantity: number;
     price: number;
   }>;
-  onPaymentSuccess: (paymentId: string, orderId: string) => void;
+  onPaymentSuccess: (paymentId: string) => void;
   onPaymentFailure: (error: string) => void;
+  onPaymentCancellation: () => void;
 }
 
 const PaymentForm: React.FC<PaymentFormProps> = ({
   paymentMethod,
   onPaymentMethodChange,
   total,
+  orderId,
   customerInfo,
   orderItems,
   onPaymentSuccess,
-  onPaymentFailure
+  onPaymentFailure,
+  onPaymentCancellation
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
 
   // Load Razorpay script
   useEffect(() => {
-    const loadRazorpay = () => {
-      // Check if Razorpay is already loaded
+    const loadRazorpay = async () => {
       if ((window as any).Razorpay) {
         setRazorpayLoaded(true);
         return;
@@ -50,19 +52,11 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       script.async = true;
       script.onload = () => {
         setRazorpayLoaded(true);
-        console.log('✅ Razorpay loaded successfully');
       };
       script.onerror = () => {
-        setError('Failed to load Razorpay. Please refresh the page and try again.');
-        console.error('❌ Failed to load Razorpay script');
+        setError('Failed to load Razorpay');
       };
       document.body.appendChild(script);
-
-      return () => {
-        if (document.body.contains(script)) {
-          document.body.removeChild(script);
-        }
-      };
     };
 
     loadRazorpay();
@@ -72,8 +66,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     {
       id: 'razorpay',
       name: 'Secure Payment Gateway',
-      icon: Shield,
-      description: 'Credit/Debit Cards, UPI, Net Banking, Wallets'
+      icon: Globe,
+      description: 'Credit/Debit Cards, UPI, Net Banking'
     }
   ];
 
@@ -96,62 +90,61 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
     setLoading(true);
     setError(null);
-    setPaymentStatus('processing');
 
     try {
-      // Create payment details
-      const paymentDetails: PaymentDetails = {
+      // Use the provided order ID or generate a fallback
+      const finalOrderId = orderId || `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const paymentDetails = {
         amount: total,
         currency: 'INR',
-        orderId: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        customerName: customerInfo.name,
-        customerEmail: customerInfo.email,
-        customerPhone: customerInfo.phone,
-        customerAddress: customerInfo.address,
-        items: orderItems
+        receipt: finalOrderId,
+        notes: {
+          customer_name: customerInfo.name,
+          customer_email: customerInfo.email,
+          customer_phone: customerInfo.phone,
+          customer_address: customerInfo.address,
+          items: JSON.stringify(orderItems)
+        }
       };
-
-      console.log('🚀 Initiating payment with details:', paymentDetails);
 
       // Initialize Razorpay checkout
       await initializeRazorpayCheckout(
         paymentDetails,
         (response) => {
           // Payment successful
-          console.log('✅ Payment successful:', response);
-          setPaymentStatus('success');
           setLoading(false);
-          onPaymentSuccess(response.razorpay_payment_id, paymentDetails.orderId);
+          onPaymentSuccess(response.razorpay_payment_id);
         },
         (error) => {
           // Payment failed or cancelled
-          console.error('❌ Payment error:', error);
           setError(error);
-          setPaymentStatus('failed');
           setLoading(false);
+          if (error.includes('cancelled') || error.includes('closed')) {
+            onPaymentCancellation();
+          } else {
+            onPaymentFailure(error);
+          }
         }
       );
 
     } catch (error) {
-      console.error('❌ Payment initialization error:', error);
       setError(error instanceof Error ? error.message : 'Failed to initialize payment. Please try again.');
-      setPaymentStatus('failed');
       setLoading(false);
     }
   };
 
   const retryPayment = () => {
     setError(null);
-    setPaymentStatus('idle');
     handlePayment();
   };
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-mahogany mb-6">Payment Method</h2>
+      {/* <h2 className="text-2xl font-bold text-mahogany mb-6">Payment Method</h2> */}
 
       {/* Payment Method Selection */}
-      <div className="space-y-4 mb-8">
+      {/* <div className="space-y-4 mb-8">
         {paymentMethods.map((method) => (
           <div
             key={method.id}
@@ -184,7 +177,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
             </div>
           </div>
         ))}
-      </div>
+      </div> */}
 
       {/* Payment Summary */}
       <div className="bg-gray-50 rounded-lg p-6 mb-6">
@@ -251,35 +244,28 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Error Display */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600" />
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-red-700 text-sm font-medium">Payment Error</p>
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-            {paymentStatus === 'failed' && (
-              <button
-                onClick={retryPayment}
-                className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-              >
-                Retry
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Success Message */}
-      {paymentStatus === 'success' && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600" />
-            <div>
-              <p className="text-green-700 text-sm font-medium">Payment Successful!</p>
-              <p className="text-green-600 text-sm">Your payment has been processed successfully.</p>
+              <h4 className="font-medium text-red-800 mb-1">Payment Error</h4>
+              <p className="text-red-700 text-sm mb-3">{error}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={retryPayment}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={() => setError(null)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -301,23 +287,18 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       {/* Payment Button */}
       <button
         onClick={handlePayment}
-        disabled={loading || !termsAccepted || !razorpayLoaded || paymentStatus === 'success'}
+        disabled={loading || !termsAccepted || !razorpayLoaded}
         className="w-full bg-rose-gold text-white py-4 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {loading ? (
           <>
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            {paymentStatus === 'processing' ? 'Processing Payment...' : 'Initializing...'}
+            Processing Payment...
           </>
         ) : !razorpayLoaded ? (
           <>
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
             Loading Payment Gateway...
-          </>
-        ) : paymentStatus === 'success' ? (
-          <>
-            <CheckCircle className="w-5 h-5" />
-            Payment Successful
           </>
         ) : (
           <>
@@ -330,7 +311,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       {/* Payment Methods Info */}
       <div className="mt-4 text-center">
         <p className="text-xs text-gray-500">
-          Accepted: Credit/Debit Cards • UPI • Net Banking • Wallets
+          Accepted: Credit/Debit Cards • UPI • Net Banking
         </p>
       </div>
     </div>

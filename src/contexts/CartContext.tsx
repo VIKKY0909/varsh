@@ -12,6 +12,7 @@ interface CartItem {
     name: string;
     price: number;
     images: string[];
+    stock_quantity: number;
   };
 }
 
@@ -24,6 +25,7 @@ interface CartContextType {
   clearCart: () => Promise<void>;
   getTotalPrice: () => number;
   getTotalItems: () => number;
+  checkStockAvailability: (productId: string, size: string, quantity: number) => Promise<boolean>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -58,16 +60,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('cart_items')
         .select(`
           *,
-          product:products(id, name, price, images)
+          product:products(id, name, price, images, stock_quantity)
         `)
         .eq('user_id', user.id);
 
       if (error) throw error;
       setItems(data || []);
     } catch (error) {
-      console.error('Error fetching cart items:', error);
+      // Handle error silently or show user-friendly message
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkStockAvailability = async (productId: string, size: string, quantity: number): Promise<boolean> => {
+    try {
+      // Get current stock for the product
+      const { data: productData, error: productError } = await supabase
+        .from('products')
+        .select('stock_quantity')
+        .eq('id', productId)
+        .single();
+
+      if (productError || !productData) {
+        return false;
+      }
+
+      // Check if requested quantity is available
+      return productData.stock_quantity >= quantity;
+    } catch (error) {
+      return false;
     }
   };
 
@@ -75,13 +97,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
 
     try {
+      // Check stock availability before adding to cart
+      const isAvailable = await checkStockAvailability(productId, size, quantity);
+      if (!isAvailable) {
+        throw new Error('Insufficient stock available');
+      }
+
       // Check if item already exists
       const existingItem = items.find(
         item => item.product_id === productId && item.size === size
       );
 
       if (existingItem) {
-        await updateQuantity(existingItem.id, existingItem.quantity + quantity);
+        // Check if new total quantity is available
+        const newTotalQuantity = existingItem.quantity + quantity;
+        const isTotalAvailable = await checkStockAvailability(productId, size, newTotalQuantity);
+        if (!isTotalAvailable) {
+          throw new Error('Insufficient stock for requested quantity');
+        }
+        
+        await updateQuantity(existingItem.id, newTotalQuantity);
       } else {
         const { error } = await supabase
           .from('cart_items')
@@ -96,7 +131,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await fetchCartItems();
       }
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      throw error;
     }
   };
 
@@ -110,7 +145,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       setItems(items.filter(item => item.id !== itemId));
     } catch (error) {
-      console.error('Error removing from cart:', error);
+      throw error;
     }
   };
 
@@ -121,6 +156,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      // Get the cart item to check product and size
+      const cartItem = items.find(item => item.id === itemId);
+      if (!cartItem) {
+        throw new Error('Cart item not found');
+      }
+
+      // Check stock availability for new quantity
+      const isAvailable = await checkStockAvailability(cartItem.product_id, cartItem.size, quantity);
+      if (!isAvailable) {
+        throw new Error('Insufficient stock for requested quantity');
+      }
+
       const { error } = await supabase
         .from('cart_items')
         .update({ quantity })
@@ -132,7 +179,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         item.id === itemId ? { ...item, quantity } : item
       ));
     } catch (error) {
-      console.error('Error updating quantity:', error);
+      throw error;
     }
   };
 
@@ -148,7 +195,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       setItems([]);
     } catch (error) {
-      console.error('Error clearing cart:', error);
+      throw error;
     }
   };
 
@@ -169,6 +216,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearCart,
     getTotalPrice,
     getTotalItems,
+    checkStockAvailability,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -71,13 +71,11 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
 
   // Fetch orders with complete data
   const fetchOrders = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
-
-      console.log('🔍 Fetching orders with complete data...');
-
-      // Fetch orders with all related data including Razorpay fields
+      // Fetch orders with order items
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select(`
@@ -91,86 +89,80 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
             products!order_items_product_id_fkey(
               id,
               name,
-              images,
-              price
+              images
             )
           )
         `)
         .order('created_at', { ascending: false });
 
       if (ordersError) {
-        console.error('❌ Error fetching orders:', ordersError);
         throw ordersError;
       }
-
-      console.log('📦 Orders fetched:', ordersData?.length || 0);
 
       if (!ordersData || ordersData.length === 0) {
         setOrders([]);
         return;
       }
 
-      // Get user emails and profiles for all orders
+      // Extract unique user IDs
       const userIds = [...new Set(ordersData.map(order => order.user_id))];
-      console.log('👥 User IDs found:', userIds.length);
+
+      // Get user emails using the database function
+      let userEmailsMap = new Map();
       
-      // Get user emails using the function
-      const { data: userEmailsData, error: userEmailsError } = await supabase
-        .rpc('get_user_emails', { user_ids: userIds });
+      try {
+        const { data: userEmailsData, error: userEmailsError } = await supabase
+          .rpc('get_user_emails_for_admin', { user_ids: userIds });
 
-      if (userEmailsError) {
-        console.error('❌ Error fetching user emails:', userEmailsError);
-      } else {
-        console.log('📧 User emails fetched:', userEmailsData?.length || 0);
+        if (!userEmailsError && userEmailsData) {
+          userEmailsData.forEach((user: any) => {
+            userEmailsMap.set(user.user_id, user.email || 'N/A');
+          });
+        }
+      } catch (error) {
+        // Continue with empty map if function fails
       }
 
-      // Get user profiles
-      const { data: userProfilesData, error: userProfilesError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .in('user_id', userIds);
+      // Get user profiles for additional information
+      let userProfilesMap = new Map();
+      
+      try {
+        const { data: userProfilesData, error: userProfilesError } = await supabase
+          .from('user_profiles')
+          .select('user_id, full_name, phone, gender, date_of_birth')
+          .in('user_id', userIds);
 
-      if (userProfilesError) {
-        console.error('❌ Error fetching user profiles:', userProfilesError);
-      } else {
-        console.log('👤 User profiles fetched:', userProfilesData?.length || 0);
+        if (!userProfilesError && userProfilesData) {
+          userProfilesData.forEach(profile => {
+            userProfilesMap.set(profile.user_id, profile);
+          });
+        }
+      } catch (error) {
+        // Continue with empty map if query fails
       }
 
-      // Create maps for quick lookup
-      const userEmailsMap = new Map();
-      const userProfilesMap = new Map();
-
-      userEmailsData?.forEach((user: { user_id: string; email: string }) => {
-        userEmailsMap.set(user.user_id, user.email);
-      });
-
-      userProfilesData?.forEach((profile: { user_id: string; full_name?: string; phone?: string; gender?: string; date_of_birth?: string; is_admin?: boolean }) => {
-        userProfilesMap.set(profile.user_id, profile);
-      });
-
-      // Combine all data
-      const completeOrders = ordersData.map((order: any) => {
+      // Merge orders with user data
+      const completeOrders = ordersData.map(order => {
         const userEmail = userEmailsMap.get(order.user_id) || 'N/A';
         const userProfile = userProfilesMap.get(order.user_id);
-
+        
         return {
           ...order,
           user: {
             email: userEmail,
-            user_profiles: userProfile || {
-              full_name: 'N/A',
-              phone: 'N/A',
-              gender: 'N/A',
-              date_of_birth: 'N/A'
+            user_profiles: {
+              full_name: userProfile?.full_name || 'N/A',
+              phone: userProfile?.phone || 'N/A',
+              gender: userProfile?.gender || 'N/A',
+              date_of_birth: userProfile?.date_of_birth || 'N/A'
             }
           }
         };
       });
 
-      console.log('✅ Complete orders prepared:', completeOrders.length);
       setOrders(completeOrders);
+
     } catch (err) {
-      console.error('❌ Error in fetchOrders:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch orders');
     } finally {
       setLoading(false);
@@ -234,7 +226,6 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
       }
 
     } catch (err) {
-      console.error('❌ Error updating order status:', err);
       setError(err instanceof Error ? err.message : 'Failed to update order status');
     } finally {
       setLoading(false);
@@ -258,7 +249,6 @@ const OrderManagement = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: 
         setSelectedOrder(null);
       }
     } catch (err) {
-      console.error('❌ Error deleting order:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete order');
     } finally {
       setLoading(false);
