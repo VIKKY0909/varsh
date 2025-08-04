@@ -18,6 +18,9 @@ import AdminDashboard from './components/Admin/AdminDashboard';
 import AdminRoute from './components/Admin/AdminRoute';
 import ContactUs from './pages/ContactUs';
 import AboutUs from './pages/AboutUs';
+import TermsAndConditions from './pages/TermsAndConditions';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import PaymentTest from './pages/PaymentTest';
 
 function App() {
   return (
@@ -40,6 +43,9 @@ function App() {
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/contact" element={<ContactUs />} />
                 <Route path="/about" element={<AboutUs />} />
+                <Route path="/terms" element={<TermsAndConditions />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/payment-test" element={<PaymentTest />} />
                 <Route 
                   path="/admin" 
                   element={

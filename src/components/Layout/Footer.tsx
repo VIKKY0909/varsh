@@ -4,9 +4,9 @@ import { Mail, MapPin, Instagram } from 'lucide-react';
 const Footer = () => {
   const quickLinks = [
     { name: 'About Us', path: '/about' },
-    // { name: 'Size Guide', path: '/size-guide' },
     { name: 'Contact Us', path: '/contact' },
-   
+    { name: 'Terms & Conditions', path: '/terms' },
+    { name: 'Privacy Policy', path: '/privacy' },
   ];
 
   const categories = [
