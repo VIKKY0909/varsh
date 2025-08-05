@@ -104,7 +104,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           customer_email: customerInfo.email,
           customer_phone: customerInfo.phone,
           customer_address: customerInfo.address,
-          items: JSON.stringify(orderItems)
+          items: JSON.stringify(orderItems),
+          order_id: finalOrderId // Add order ID for payment verification
         }
       };
 

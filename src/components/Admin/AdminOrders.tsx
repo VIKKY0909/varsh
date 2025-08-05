@@ -65,6 +65,78 @@ interface OrderManagementProps {
   onDeleteOrder?: (orderId: string) => Promise<void>;
 }
 
+// Helper function to convert days until delivery to status string
+function getDeliveryStatusFromDays(days: number): string {
+  if (days < 0) return 'delivered';
+  if (days === 0) return 'shipped';
+  if (days <= 3) return 'processing';
+  return 'pending';
+}
+
+// Helper function to get color class for days until delivery
+function getDeliveryColorFromDays(days: number): string {
+  if (days < 0) return 'text-green-600 bg-green-100';
+  if (days === 0) return 'text-purple-600 bg-purple-100';
+  if (days <= 3) return 'text-blue-600 bg-blue-100';
+  return 'text-yellow-600 bg-yellow-100';
+}
+
+// Helper function to get status color
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'confirmed':
+      return 'text-green-600 bg-green-100';
+    case 'shipped':
+      return 'text-blue-600 bg-blue-100';
+    case 'delivered':
+      return 'text-purple-600 bg-purple-100';
+    case 'draft':
+      return 'text-gray-600 bg-gray-100';
+    case 'cancelled':
+      return 'text-red-600 bg-red-100';
+    case 'pending':
+      return 'text-yellow-600 bg-yellow-100';
+    default:
+      return 'text-gray-600 bg-gray-100';
+  }
+};
+
+// Helper function to get payment status color
+const getPaymentStatusColor = (status: string) => {
+  switch (status) {
+    case 'paid':
+      return 'text-green-600 bg-green-100';
+    case 'pending':
+      return 'text-yellow-600 bg-yellow-100';
+    case 'failed':
+      return 'text-red-600 bg-red-100';
+    case 'cancelled':
+      return 'text-gray-600 bg-gray-100';
+    default:
+      return 'text-gray-600 bg-gray-100';
+  }
+};
+
+// Helper function to format status for display
+const formatStatus = (status: string) => {
+  switch (status) {
+    case 'draft':
+      return 'Draft';
+    case 'pending':
+      return 'Pending (Draft)'; // Show pending orders as drafts for clarity
+    case 'confirmed':
+      return 'Confirmed';
+    case 'shipped':
+      return 'Shipped';
+    case 'delivered':
+      return 'Delivered';
+    case 'cancelled':
+      return 'Cancelled';
+    default:
+      return status.charAt(0).toUpperCase() + status.slice(1);
+  }
+};
+
 // --- GROUPING FUNCTION FOR FLAT SQL DATA (MATCHING SQL FIELDS) ---
 function groupOrders(flatOrders: any[]): OrderDetails[] {
   const ordersMap: { [orderId: string]: OrderDetails } = {};
@@ -108,7 +180,7 @@ function groupOrders(flatOrders: any[]): OrderDetails[] {
         order_number: row.order_number || row.order_id.slice(0, 8).toUpperCase(),
         total_amount: Number(row.total_amount) || 0,
         status: row.status || 'pending',
-        created_at: row.created_at,
+        created_at: row.created_at || new Date().toISOString(),
         user_id: row.user_id,
         payment_status: row.payment_status || 'pending',
         shipping_cost: Number(row.shipping_cost) || 0,
@@ -141,8 +213,8 @@ function groupOrders(flatOrders: any[]): OrderDetails[] {
     if (row.order_item_id) {
       ordersMap[row.order_id].order_items.push({
         id: row.order_item_id,
-        quantity: row.quantity || 0,
-        size: row.size || '',
+        quantity: Number(row.quantity) || 0,
+        size: String(row.size || ''),
         price: Number(row.item_price) || 0,
         product_id: row.product_id,
         product: {
@@ -178,29 +250,14 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
     }
   };
 
-  // Fetch orders
+  // Fetch orders from admin_orders_flat view
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
         let query = supabase
-          .from('orders')
-          .select(`
-            *,
-            order_items (
-              *,
-              product:products (
-                id,
-                name,
-                price,
-                images
-              )
-            ),
-            user:user_profiles (
-              full_name,
-              email
-            )
-          `)
+          .from('admin_orders_flat')
+          .select('*')
           .order('created_at', { ascending: false });
 
         // Apply filters
@@ -209,16 +266,19 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
         }
 
         if (searchTerm) {
-          query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
+          query = query.or(`order_number.ilike.%${searchTerm}%,user_full_name.ilike.%${searchTerm}%,user_email.ilike.%${searchTerm}%`);
         }
 
         const { data, error: ordersError } = await query;
 
         if (ordersError) throw ordersError;
 
-        setOrders(data || []);
+        // Group the flat data into structured orders
+        const groupedOrders = groupOrders(data || []);
+        setOrders(groupedOrders);
       } catch (err) {
-        // Handle error silently
+        console.error('Error fetching orders:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch orders');
       } finally {
         setLoading(false);
       }
@@ -358,23 +418,8 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                 setLoading(true);
                 setError(null);
                 let query = supabase
-                  .from('orders')
-                  .select(`
-                    *,
-                    order_items (
-                      *,
-                      product:products (
-                        id,
-                        name,
-                        price,
-                        images
-                      )
-                    ),
-                    user:user_profiles (
-                      full_name,
-                      email
-                    )
-                  `)
+                  .from('admin_orders_flat')
+                  .select('*')
                   .order('created_at', { ascending: false });
 
                 if (statusFilter !== 'all') {
@@ -382,14 +427,16 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                 }
 
                 if (searchTerm) {
-                  query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
+                  query = query.or(`order_number.ilike.%${searchTerm}%,user_full_name.ilike.%${searchTerm}%,user_email.ilike.%${searchTerm}%`);
                 }
 
                 const { data, error: ordersError } = await query;
 
                 if (ordersError) throw ordersError;
 
-                setOrders(data || []);
+                // Group the flat data into structured orders
+                const groupedOrders = groupOrders(data || []);
+                setOrders(groupedOrders);
               } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch orders');
               } finally {
@@ -444,23 +491,8 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                   setLoading(true);
                   setError(null);
                   let query = supabase
-                    .from('orders')
-                    .select(`
-                      *,
-                      order_items (
-                        *,
-                        product:products (
-                          id,
-                          name,
-                          price,
-                          images
-                        )
-                      ),
-                      user:user_profiles (
-                        full_name,
-                        email
-                      )
-                    `)
+                    .from('admin_orders_flat')
+                    .select('*')
                     .order('created_at', { ascending: false });
 
                   if (statusFilter !== 'all') {
@@ -468,14 +500,16 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                   }
 
                   if (searchTerm) {
-                    query = query.or(`order_number.ilike.%${searchTerm}%,user.full_name.ilike.%${searchTerm}%`);
+                    query = query.or(`order_number.ilike.%${searchTerm}%,user_full_name.ilike.%${searchTerm}%,user_email.ilike.%${searchTerm}%`);
                   }
 
                   const { data, error: ordersError } = await query;
 
                   if (ordersError) throw ordersError;
 
-                  setOrders(data || []);
+                  // Group the flat data into structured orders
+                  const groupedOrders = groupOrders(data || []);
+                  setOrders(groupedOrders);
                 } catch (err) {
                   setError(err instanceof Error ? err.message : 'Failed to fetch orders');
                 } finally {
@@ -506,7 +540,7 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
             </thead>
             <tbody>
               {filteredOrders.map((order) => {
-                const daysUntilDelivery = getDaysUntilDelivery(order.estimated_delivery_day);
+                const daysUntilDelivery = order.estimated_delivery_day ? getDaysUntilDelivery(order.estimated_delivery_day) : 0;
                 
                 return (
                   <tr key={order.id} className="border-b hover:bg-gray-50">
@@ -551,12 +585,18 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                       })()}
                     </td>
                     <td className="py-2">
+                      <div className="text-sm">
+                        <div className={`inline-block px-2 py-1 rounded text-xs ${getStatusColor(order.status)}`}>
+                          {formatStatus(order.status)}
+                        </div>
+                      </div>
                       <select
                         value={order.status}
                         onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
                         disabled={loading}
-                        className="border rounded px-2 py-1 text-xs md:text-sm"
+                        className="mt-1 border rounded px-2 py-1 text-xs w-full"
                       >
+                        <option value="draft">Draft</option>
                         <option value="pending">Pending</option>
                         <option value="confirmed">Confirmed</option>
                         <option value="processing">Processing</option>
@@ -567,11 +607,7 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                     </td>
                     <td className="py-2">
                       <div className="text-sm">
-                        <div className={`inline-block px-2 py-1 rounded text-xs ${
-                          order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-                          order.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
+                        <div className={`inline-block px-2 py-1 rounded text-xs ${getPaymentStatusColor(order.payment_status)}`}>
                           {order.payment_status?.toUpperCase() || 'PENDING'}
                         </div>
                         {order.razorpay_order_id && (
@@ -586,8 +622,8 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                         {order.estimated_delivery_day ? (
                           <div>
                             <div className="font-medium text-xs md:text-sm">{order.estimated_delivery_day}</div>
-                            <div className={`text-xs px-1 py-0.5 rounded ${getDeliveryStatusColor(daysUntilDelivery)}`}>
-                              {formatDeliveryStatus(daysUntilDelivery)}
+                            <div className={`text-xs px-1 py-0.5 rounded ${getDeliveryColorFromDays(daysUntilDelivery)}`}>
+                              {getDeliveryStatusFromDays(daysUntilDelivery)}
                             </div>
                           </div>
                         ) : (
@@ -641,21 +677,12 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                   <p><strong>Order #:</strong> {selectedOrder.order_number}</p>
                   <p><strong>Date:</strong> {formatDate(selectedOrder.created_at)}</p>
                   <p><strong>Status:</strong>
-                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                      selectedOrder.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                      selectedOrder.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                      selectedOrder.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {selectedOrder.status.toUpperCase()}
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${getStatusColor(selectedOrder.status)}`}>
+                      {formatStatus(selectedOrder.status)}
                     </span>
                   </p>
                   <p><strong>Payment Status:</strong> 
-                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                      selectedOrder.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-                      selectedOrder.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${getPaymentStatusColor(selectedOrder.payment_status)}`}>
                       {selectedOrder.payment_status?.toUpperCase() || 'PENDING'}
                     </span>
                   </p>
@@ -673,8 +700,8 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                   )}
                   {selectedOrder.days_until_delivery !== undefined && (
                     <p><strong>Days Until Delivery:</strong> 
-                      <span className={`ml-2 px-2 py-1 rounded text-xs ${getDeliveryStatusColor(selectedOrder.days_until_delivery)}`}>
-                        {formatDeliveryStatus(selectedOrder.days_until_delivery)}
+                      <span className={`ml-2 px-2 py-1 rounded text-xs ${getDeliveryColorFromDays(selectedOrder.days_until_delivery || 0)}`}>
+                        {getDeliveryStatusFromDays(selectedOrder.days_until_delivery || 0)}
                       </span>
                     </p>
                   )}

@@ -1,106 +1,294 @@
 import React from 'react';
-import { Award, Users, Heart, Sparkles } from 'lucide-react';
+import { Heart, Award, Users, Globe, Shield, Truck, Star } from 'lucide-react';
+import teamImage from '../../public/team.jpg';
 
-const About = () => {
-  const features = [
+const AboutUs = () => {
+  const stats = [
+    { number: '5000+', label: 'Happy Customers', icon: Users },
+    { number: '1000+', label: 'Products', icon: Award },
+    { number: '50+', label: 'Artisan Partners', icon: Heart },
+    { number: '25+', label: 'Cities Served', icon: Globe }
+  ];
+
+  const values = [
     {
-      icon: <Award className="w-8 h-8" />,
-      title: "Premium Quality",
-      description: "Hand-selected fabrics and meticulous craftsmanship ensure every piece meets our exacting standards"
+      icon: Heart,
+      title: 'Authenticity',
+      description: 'We source directly from skilled artisans to bring you authentic ethnic wear from across India.'
     },
     {
-      icon: <Users className="w-8 h-8" />,
-      title: "Skilled Artisans",
-      description: "Working with master craftsmen who have passed down their skills through generations"
+      icon: Shield,
+      title: 'Quality',
+      description: 'Every piece is crafted with premium materials and attention to detail.'
     },
     {
-      icon: <Heart className="w-8 h-8" />,
-      title: "Ethical Sourcing",
-      description: "Supporting local communities and sustainable practices in every aspect of our business"
+      icon: Users,
+      title: 'Community',
+      description: 'Supporting local artisans and preserving traditional craftsmanship.'
     },
     {
-      icon: <Sparkles className="w-8 h-8" />,
-      title: "Timeless Designs",
-      description: "Blending traditional motifs with contemporary aesthetics for modern ethnic wear"
+      icon: Globe,
+      title: 'Heritage',
+      description: 'Celebrating India\'s rich cultural diversity through fashion.'
     }
   ];
 
+
+
   return (
-    <section className="py-20 bg-gradient-to-br from-mahogany via-rose-900 to-mahogany text-white overflow-hidden relative">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="w-full h-full bg-repeat" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23FFC0CB' fill-opacity='0.3'%3E%3Cpath d='M50 50c0-5.523-4.477-10-10-10s-10 4.477-10 10 4.477 10 10 10 10-4.477 10-10zm-20-20c0-5.523-4.477-10-10-10s-10 4.477-10 10 4.477 10 10 10 10-4.477 10-10zm40 0c0-5.523-4.477-10-10-10s-10 4.477-10 10 4.477 10 10 10 10-4.477 10-10zm0 40c0-5.523-4.477-10-10-10s-10 4.477-10 10 4.477 10 10 10 10-4.477 10-10zm-40 0c0-5.523-4.477-10-10-10s-10 4.477-10 10 4.477 10 10 10 10-4.477 10-10z'/%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-rose-gold to-copper text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-5xl font-bold mb-6">About Varsh Ethnic Wears</h1>
+          <p className="text-xl opacity-90 max-w-3xl mx-auto">
+            We are passionate about bringing the authentic beauty of Indian ethnic wear to women worldwide, 
+            connecting modern fashion with traditional craftsmanship.
+          </p>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          {/* Left Content */}
-          <div>
-            <div className="inline-block bg-gradient-to-r from-blush-pink to-rose-gold px-6 py-2 rounded-full text-sm font-medium mb-6">
-              Our Heritage
+      {/* Story Section */}
+      {/* Story Section */}
+      <div className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl font-bold text-mahogany mb-6">Our Story</h2>
+              <div className="space-y-4 text-gray-700 text-lg leading-relaxed">
+                <p>
+                  We didn't just start a label—we started an <span className="font-semibold text-mahogany">एहसास</span>. 
+                  A feeling that every skin tone deserves to shine. A belief that <span className="font-semibold text-mahogany">सुंदरता</span> isn't one-size-fits-all.
+                </p>
+                <p>
+                  We're <span className="font-semibold text-mahogany">Varsha</span> (Founder & CEO), <span className="font-semibold text-mahogany">Vivek</span> and <span className="font-semibold text-mahogany">Ayush</span> (Co-founders)—three friends who grew up surrounded by <span className="font-semibold text-mahogany">रंग, रिवाज़, and रूट्स</span>. 
+                  And we wanted to bring all of that into fashion that feels like <span className="font-semibold text-mahogany">अपनापन</span>.
+                </p>
+                <p>
+                  Our kurtis are not just stitched for style—they carry <span className="font-semibold text-mahogany">परंपरा</span> with a touch of today. 
+                  From soft cottons to vibrant prints, from festive <span className="font-semibold text-mahogany">जश्न</span> to daily comfort—each piece is made with love for 
+                  <span className="font-semibold text-mahogany">हर रंग की त्वचा</span> and <span className="font-semibold text-mahogany">हर दिल का अंदाज़</span>.
+                </p>
+                <p className="text-xl font-semibold text-mahogany">
+                  This is not just ethnic wear. This is your story, <span className="text-rose-gold">आपकी पहचान</span>.
+                </p>
+                <p className="text-lg font-medium text-copper">
+                  Style for Every Skin. Designed for Every Soul.
+                </p>
+              </div>
             </div>
-            
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6 leading-tight">
-              Crafting Elegance Since 
-              <span className="block text-blush-pink">1999</span>
-            </h2>
-            
-            <p className="text-xl text-gray-100 mb-8 leading-relaxed">
-              At Varsh Ethnic Wears, we believe that traditional clothing is more than just fabric and thread—it's a celebration of culture, artistry, and timeless beauty. Our journey began with a simple vision: to preserve the rich heritage of Indian ethnic wear while making it accessible to modern women.
-            </p>
-            
-            <p className="text-lg text-gray-200 mb-8">
-              Each piece in our collection is carefully crafted by skilled artisans who have inherited their techniques from generations past. We source the finest materials from across India, ensuring that every saree, lehenga, and kurta meets our exacting standards of quality and authenticity.
-            </p>
-
-           
-
-            <button className="bg-gradient-to-r from-blush-pink to-rose-gold text-white px-8 py-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-              Our Story
-            </button>
-          </div>
-
-          {/* Right Content - Image */}
-          <div className="relative">
-            <div className="relative">
-              <img
-                src="https://images.pexels.com/photos/6311611/pexels-photo-6311611.jpeg?auto=compress&cs=tinysrgb&w=800"
-                alt="Artisan at work"
-                className="w-full h-96 lg:h-[500px] object-cover rounded-3xl shadow-2xl"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent rounded-3xl"></div>
-              <div className="absolute bottom-8 left-8 right-8 text-white">
-                <h3 className="text-xl font-bold mb-2">Master Craftmanship</h3>
-                <p className="text-sm opacity-90">Every stitch tells a story of dedication and skill</p>
+            <div className="bg-gradient-to-br from-rose-50 to-copper-50 p-8 rounded-2xl">
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <Star className="w-6 h-6 text-rose-gold mr-3" />
+                  <span className="text-gray-700">Fashion that feels like <span className="font-medium">अपनापन</span></span>
+                </div>
+                <div className="flex items-center">
+                  <Star className="w-6 h-6 text-rose-gold mr-3" />
+                  <span className="text-gray-700">Celebrating every skin tone</span>
+                </div>
+                <div className="flex items-center">
+                  <Star className="w-6 h-6 text-rose-gold mr-3" />
+                  <span className="text-gray-700"><span className="font-medium">परंपरा</span> with a touch of today</span>
+                </div>
+                <div className="flex items-center">
+                  <Star className="w-6 h-6 text-rose-gold mr-3" />
+                  <span className="text-gray-700">Made with love for every style</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Features Grid */}
-        <div className="mt-20 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="text-center group hover:transform hover:scale-105 transition-all duration-300"
-            >
-              <div className="bg-gradient-to-br from-blush-pink to-rose-gold p-4 rounded-2xl w-16 h-16 mx-auto mb-6 flex items-center justify-center group-hover:shadow-lg transition-all duration-300">
-                {feature.icon}
+      </div>
+      
+      {/* Stats Section */}
+      {/* <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Our Impact</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                  <stat.icon className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-3xl font-bold text-mahogany mb-2">{stat.number}</div>
+                <div className="text-gray-600">{stat.label}</div>
               </div>
-              <h3 className="text-xl font-bold mb-4 group-hover:text-blush-pink transition-colors">
-                {feature.title}
-              </h3>
-              <p className="text-gray-200 leading-relaxed">
-                {feature.description}
+            ))}
+          </div>
+        </div>
+      </div> */}
+
+      {/* Values Section */}
+      <div className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Our Values</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {values.map((value, index) => (
+              <div key={index} className="bg-white rounded-xl p-6 shadow-sm text-center">
+                <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                  <value.icon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-mahogany mb-3">{value.title}</h3>
+                <p className="text-gray-600">{value.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Mission & Vision */}
+      <div className="py-16 bg-gradient-to-r from-rose-50 to-copper-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12">
+            <div className="bg-white rounded-2xl p-8 shadow-sm">
+              <h3 className="text-2xl font-bold text-mahogany mb-4">Our Mission</h3>
+              <p className="text-gray-700 leading-relaxed">
+                To preserve and promote India's rich cultural heritage through authentic ethnic wear, 
+                while supporting local artisans and providing modern women with beautiful, 
+                high-quality traditional clothing that celebrates their roots.
               </p>
             </div>
-          ))}
+            <div className="bg-white rounded-2xl p-8 shadow-sm">
+              <h3 className="text-2xl font-bold text-mahogany mb-4">Our Vision</h3>
+              <p className="text-gray-700 leading-relaxed">
+                To become the leading platform for authentic Indian ethnic wear globally, 
+                connecting artisans with customers worldwide and ensuring that traditional 
+                craftsmanship continues to thrive in the modern world.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-    </section>
+
+                           {/* Team Section */}
+        <div className="py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Meet Our Leadership Team</h2>
+            
+            {/* Team Image and Leadership Info */}
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="relative">
+                                 <img
+                   src={teamImage}
+                   alt="Varsh Leadership Team - Varsha, Vivek, and Ayush"
+                   className="w-full h-96 lg:h-[500px] object-cover rounded-3xl shadow-2xl"
+                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent rounded-3xl"></div>
+                <div className="absolute bottom-8 left-8 right-8 text-white">
+                  <h3 className="text-2xl font-bold mb-2">Our Leadership Team</h3>
+                  <p className="text-lg font-medium text-rose-gold">Varsha, Vivek & Ayush</p>
+                  <p className="text-sm opacity-90 mt-2">Bringing tradition to life with passion and dedication.</p>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-rose-50 to-copper-50 p-8 rounded-2xl">
+                <h3 className="text-2xl font-bold text-mahogany mb-6">Our Leadership</h3>
+                <div className="space-y-6">
+                  <div className="border-l-4 border-rose-gold pl-6">
+                    <h4 className="text-xl font-semibold text-mahogany mb-2">Varsha</h4>
+                    <p className="text-rose-gold font-medium mb-2">Founder & CEO</p>
+                    <p className="text-gray-700">Passionate about bringing authentic ethnic wear to modern women and celebrating every skin tone. Leads our mission to celebrate <span className="font-semibold text-mahogany">हर रंग की त्वचा</span> through authentic ethnic wear that carries <span className="font-semibold text-mahogany">परंपरा</span> with a modern touch.</p>
+                  </div>
+                  <div className="border-l-4 border-rose-gold pl-6">
+                    <h4 className="text-xl font-semibold text-mahogany mb-2">Vivek</h4>
+                    <p className="text-rose-gold font-medium mb-2">Co-founder</p>
+                    <p className="text-gray-700">Ensuring seamless operations and customer satisfaction with a focus on quality and excellence. Manages the business operations to deliver the best experience to our customers.</p>
+                  </div>
+                  <div className="border-l-4 border-rose-gold pl-6">
+                    <h4 className="text-xl font-semibold text-mahogany mb-2">Ayush</h4>
+                    <p className="text-rose-gold font-medium mb-2">Co-founder</p>
+                    <p className="text-gray-700">Curating the finest collection of ethnic wear from across India with traditional values and modern appeal. Ensures every piece reflects our commitment to <span className="font-semibold text-mahogany">अपनापन</span> and cultural authenticity.</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-mahogany mt-6 pt-4 border-t border-rose-gold/30">
+                    <Star className="w-5 h-5" />
+                    <span className="font-semibold">Style for Every Skin. Designed for Every Soul.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      {/* Why Choose Us */}
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Why Choose Varsh Ethnic Wears?</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-mahogany mb-3">Authentic Craftsmanship</h3>
+              <p className="text-gray-600">
+                Every piece is handcrafted by skilled artisans using traditional techniques passed down through generations.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-mahogany mb-3">Quality Assurance</h3>
+              <p className="text-gray-600">
+                We carefully select premium materials and ensure every product meets our high quality standards.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                <Truck className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-mahogany mb-3">Fast & Secure Delivery</h3>
+              <p className="text-gray-600">
+                Nationwide delivery with secure packaging and real-time tracking for your peace of mind.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-mahogany mb-3">Customer Support</h3>
+              <p className="text-gray-600">
+                Our dedicated team is here to help you with any questions or concerns about your order.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                <Award className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-mahogany mb-3">Wide Selection</h3>
+              <p className="text-gray-600">
+                From casual kurtis to party wear, we offer a diverse collection to suit every occasion.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                <Globe className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-mahogany mb-3">Cultural Heritage</h3>
+              <p className="text-gray-600">
+                Celebrate India's diverse cultural heritage through our carefully curated ethnic wear collection.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="py-16 bg-gradient-to-r from-rose-gold to-copper text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold mb-6">Ready to Explore Our Collection?</h2>
+          <p className="text-xl opacity-90 mb-8">
+            Discover the beauty of authentic Indian ethnic wear crafted with love and tradition.
+          </p>
+          <a
+            href="/products"
+            className="inline-block bg-white text-rose-gold px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+          >
+            Shop Now
+          </a>
+        </div>
+      </div>
+    </div>
   );
 };
 
-export default About;
+export default AboutUs; 

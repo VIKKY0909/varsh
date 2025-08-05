@@ -18,6 +18,7 @@ serve(async (req) => {
     try {
       body = await req.json();
     } catch (error) {
+      console.error('JSON parsing error:', error);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -32,8 +33,11 @@ serve(async (req) => {
 
     const { amount, currency, receipt, notes } = body;
 
+    console.log('Received request:', { amount, currency, receipt, notes });
+
     // Validate required fields
     if (!amount || !currency || !receipt) {
+      console.error('Missing required fields:', { amount, currency, receipt });
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -48,6 +52,7 @@ serve(async (req) => {
 
     // Validate amount
     if (typeof amount !== 'number' || amount <= 0) {
+      console.error('Invalid amount:', amount);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -62,6 +67,7 @@ serve(async (req) => {
 
     // Validate currency
     if (currency !== 'INR') {
+      console.error('Invalid currency:', currency);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -75,13 +81,35 @@ serve(async (req) => {
     }
 
     // Get environment variables
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const RAZORPAY_KEY_ID = Deno.env.get('RAZORPAY_KEY_ID')
     const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET')
 
+    console.log('Environment check:', {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasSupabaseServiceKey: !!supabaseServiceKey,
+      hasRazorpayKeyId: !!RAZORPAY_KEY_ID,
+      hasRazorpayKeySecret: !!RAZORPAY_KEY_SECRET
+    });
+
     // Validate environment variables
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase environment variables');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Supabase configuration missing' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+      console.error('Missing Razorpay environment variables');
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -96,6 +124,8 @@ serve(async (req) => {
 
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    console.log('Creating Razorpay order with amount:', amount * 100);
 
     // Create Razorpay order
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
@@ -112,8 +142,11 @@ serve(async (req) => {
       })
     });
 
+    console.log('Razorpay response status:', razorpayResponse.status);
+
     if (!razorpayResponse.ok) {
       const errorData = await razorpayResponse.json();
+      console.error('Razorpay API error:', errorData);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -128,6 +161,7 @@ serve(async (req) => {
     }
 
     const orderData = await razorpayResponse.json();
+    console.log('Razorpay order created successfully:', orderData.id);
 
     return new Response(
       JSON.stringify({ 
@@ -140,10 +174,12 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    console.error('Unexpected error:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: 'Internal server error' 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
         status: 500, 

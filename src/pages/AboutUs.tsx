@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, Award, Users, Globe, Shield, Truck, Star } from 'lucide-react';
+import teamImage from '../public/team.jpg';
 
 const AboutUs = () => {
   const stats = [
@@ -32,26 +33,7 @@ const AboutUs = () => {
     }
   ];
 
-  const team = [
-    {
-      name: 'Priya Sharma',
-      role: 'Founder & CEO',
-      image: '/team/priya.jpg',
-      bio: 'Passionate about bringing authentic ethnic wear to modern women.'
-    },
-    {
-      name: 'Rajesh Kumar',
-      role: 'Head of Operations',
-      image: '/team/rajesh.jpg',
-      bio: 'Ensuring seamless delivery and customer satisfaction.'
-    },
-    {
-      name: 'Meera Patel',
-      role: 'Creative Director',
-      image: '/team/meera.jpg',
-      bio: 'Curating the finest collection of ethnic wear from across India.'
-    }
-  ];
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -67,6 +49,7 @@ const AboutUs = () => {
       </div>
 
       {/* Story Section */}
+      {/* Story Section */}
       <div className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -74,17 +57,23 @@ const AboutUs = () => {
               <h2 className="text-3xl font-bold text-mahogany mb-6">Our Story</h2>
               <div className="space-y-4 text-gray-700 text-lg leading-relaxed">
                 <p>
-                  Founded in 2020, Varsh Ethnic Wears was born from a deep love for India's rich cultural heritage 
-                  and a vision to make authentic ethnic wear accessible to women everywhere.
+                  We didn't just start a label—we started an <span className="font-semibold text-mahogany">एहसास</span>. 
+                  A feeling that every skin tone deserves to shine. A belief that <span className="font-semibold text-mahogany">सुंदरता</span> isn't one-size-fits-all.
                 </p>
                 <p>
-                  Our journey began when our founder, Priya Sharma, discovered the incredible craftsmanship of 
-                  artisans across India during her travels. She realized that these beautiful creations deserved 
-                  a wider audience.
+                  We're <span className="font-semibold text-mahogany">Varsha</span> (Founder & CEO), <span className="font-semibold text-mahogany">Vivek</span> and <span className="font-semibold text-mahogany">Ayush</span> (Co-founders)—three friends who grew up surrounded by <span className="font-semibold text-mahogany">रंग, रिवाज़, and रूट्स</span>. 
+                  And we wanted to bring all of that into fashion that feels like <span className="font-semibold text-mahogany">अपनापन</span>.
                 </p>
                 <p>
-                  Today, we work directly with over 50 skilled artisans from different regions of India, 
-                  bringing you handcrafted pieces that tell stories of tradition, culture, and beauty.
+                  Our kurtis are not just stitched for style—they carry <span className="font-semibold text-mahogany">परंपरा</span> with a touch of today. 
+                  From soft cottons to vibrant prints, from festive <span className="font-semibold text-mahogany">जश्न</span> to daily comfort—each piece is made with love for 
+                  <span className="font-semibold text-mahogany">हर रंग की त्वचा</span> and <span className="font-semibold text-mahogany">हर दिल का अंदाज़</span>.
+                </p>
+                <p className="text-xl font-semibold text-mahogany">
+                  This is not just ethnic wear. This is your story, <span className="text-rose-gold">आपकी पहचान</span>.
+                </p>
+                <p className="text-lg font-medium text-copper">
+                  Style for Every Skin. Designed for Every Soul.
                 </p>
               </div>
             </div>
@@ -92,26 +81,26 @@ const AboutUs = () => {
               <div className="space-y-4">
                 <div className="flex items-center">
                   <Star className="w-6 h-6 text-rose-gold mr-3" />
-                  <span className="text-gray-700">Direct partnership with artisans</span>
+                  <span className="text-gray-700">Fashion that feels like <span className="font-medium">अपनापन</span></span>
                 </div>
                 <div className="flex items-center">
                   <Star className="w-6 h-6 text-rose-gold mr-3" />
-                  <span className="text-gray-700">Authentic ethnic wear from across India</span>
+                  <span className="text-gray-700">Celebrating every skin tone</span>
                 </div>
                 <div className="flex items-center">
                   <Star className="w-6 h-6 text-rose-gold mr-3" />
-                  <span className="text-gray-700">Premium quality materials</span>
+                  <span className="text-gray-700"><span className="font-medium">परंपरा</span> with a touch of today</span>
                 </div>
                 <div className="flex items-center">
                   <Star className="w-6 h-6 text-rose-gold mr-3" />
-                  <span className="text-gray-700">Sustainable and ethical practices</span>
+                  <span className="text-gray-700">Made with love for every style</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
+      
       {/* Stats Section */}
       {/* <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -172,24 +161,53 @@ const AboutUs = () => {
         </div>
       </div>
 
-      {/* Team Section */}
-      <div className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Meet Our Team</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {team.map((member, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-sm text-center">
-                <div className="w-24 h-24 bg-gradient-to-br from-rose-gold to-copper rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
-                  {member.name.charAt(0)}
+                           {/* Team Section */}
+        <div className="py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Meet Our Leadership Team</h2>
+            
+            {/* Team Image and Leadership Info */}
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="relative">
+                                 <img
+                   src={teamImage}
+                   alt="Varsh Leadership Team - Varsha, Vivek, and Ayush"
+                   className="w-full h-96 lg:h-[500px] object-cover rounded-3xl shadow-2xl"
+                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent rounded-3xl"></div>
+                <div className="absolute bottom-8 left-8 right-8 text-white">
+                  <h3 className="text-2xl font-bold mb-2">Our Leadership Team</h3>
+                  <p className="text-lg font-medium text-rose-gold">Varsha, Vivek & Ayush</p>
+                  <p className="text-sm opacity-90 mt-2">Bringing tradition to life with passion and dedication.</p>
                 </div>
-                <h3 className="text-xl font-semibold text-mahogany mb-2">{member.name}</h3>
-                <p className="text-rose-gold font-medium mb-3">{member.role}</p>
-                <p className="text-gray-600">{member.bio}</p>
               </div>
-            ))}
+              <div className="bg-gradient-to-br from-rose-50 to-copper-50 p-8 rounded-2xl">
+                <h3 className="text-2xl font-bold text-mahogany mb-6">Our Leadership</h3>
+                <div className="space-y-6">
+                  <div className="border-l-4 border-rose-gold pl-6">
+                    <h4 className="text-xl font-semibold text-mahogany mb-2">Varsha</h4>
+                    <p className="text-rose-gold font-medium mb-2">Founder & CEO</p>
+                    <p className="text-gray-700">Passionate about bringing authentic ethnic wear to modern women and celebrating every skin tone. Leads our mission to celebrate <span className="font-semibold text-mahogany">हर रंग की त्वचा</span> through authentic ethnic wear that carries <span className="font-semibold text-mahogany">परंपरा</span> with a modern touch.</p>
+                  </div>
+                  <div className="border-l-4 border-rose-gold pl-6">
+                    <h4 className="text-xl font-semibold text-mahogany mb-2">Vivek</h4>
+                    <p className="text-rose-gold font-medium mb-2">Co-founder</p>
+                    <p className="text-gray-700">Ensuring seamless operations and customer satisfaction with a focus on quality and excellence. Manages the business operations to deliver the best experience to our customers.</p>
+                  </div>
+                  <div className="border-l-4 border-rose-gold pl-6">
+                    <h4 className="text-xl font-semibold text-mahogany mb-2">Ayush</h4>
+                    <p className="text-rose-gold font-medium mb-2">Co-founder</p>
+                    <p className="text-gray-700">Curating the finest collection of ethnic wear from across India with traditional values and modern appeal. Ensures every piece reflects our commitment to <span className="font-semibold text-mahogany">अपनापन</span> and cultural authenticity.</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-mahogany mt-6 pt-4 border-t border-rose-gold/30">
+                    <Star className="w-5 h-5" />
+                    <span className="font-semibold">Style for Every Skin. Designed for Every Soul.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Why Choose Us */}
       <div className="py-16 bg-white">

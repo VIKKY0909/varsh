@@ -31,7 +31,7 @@ const CheckoutPage = () => {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   
   const { items, getTotalPrice, getTotalItems, clearCart, removeFromCart, updateQuantity } = useCart();
@@ -63,54 +63,54 @@ const CheckoutPage = () => {
     fetchAddresses();
   }, [user, items, navigate]);
 
-  // Clean up abandoned orders on component mount
-  useEffect(() => {
-    const cleanupAbandonedOrders = async () => {
-      if (!user) return;
+  // Enhanced cleanup for abandoned orders - REMOVED since we don't create draft orders anymore
+  // useEffect(() => {
+  //   const cleanupAbandonedOrders = async () => {
+  //     if (!user) return;
 
-      try {
-        // Find orders that are pending for more than 30 minutes
-        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+  //     try {
+  //       // Find draft orders that are pending for more than 15 minutes
+  //       const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
         
-        const { data: abandonedOrders, error } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('payment_status', 'pending')
-          .eq('status', 'pending')
-          .lt('created_at', thirtyMinutesAgo.toISOString());
+  //       const { data: abandonedOrders, error } = await supabase
+  //         .from('orders')
+  //         .select('id')
+  //         .eq('user_id', user.id)
+  //         .in('status', ['draft', 'pending'])
+  //         .eq('payment_status', 'pending')
+  //         .lt('created_at', fifteenMinutesAgo.toISOString());
 
-        if (error) throw error;
+  //       if (error) throw error;
 
-        // Cancel abandoned orders
-        if (abandonedOrders && abandonedOrders.length > 0) {
-          for (const order of abandonedOrders) {
-            await supabase
-              .from('orders')
-              .update({
-                payment_status: 'cancelled',
-                status: 'cancelled'
-              })
-              .eq('id', order.id);
+  //       // Cancel abandoned orders
+  //       if (abandonedOrders && abandonedOrders.length > 0) {
+  //         for (const order of abandonedOrders) {
+  //           await supabase
+  //             .from('orders')
+  //             .update({
+  //               payment_status: 'cancelled',
+  //               status: 'cancelled'
+  //             })
+  //             .eq('id', order.id);
 
-            // Create tracking entry
-            await supabase
-              .from('order_tracking')
-              .insert({
-                order_id: order.id,
-                status: 'Order Cancelled',
-                message: 'Order was automatically cancelled due to incomplete payment.',
-                estimated_delivery: null
-              });
-          }
-        }
-      } catch (error) {
-        // Handle error silently
-      }
-    };
+  //           // Create tracking entry
+  //           await supabase
+  //             .from('order_tracking')
+  //             .insert({
+  //               order_id: order.id,
+  //               status: 'Order Cancelled',
+  //               message: 'Order was automatically cancelled due to payment timeout.',
+  //               estimated_delivery: null
+  //             });
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error('Error cleaning up abandoned orders:', error);
+  //     }
+  //   };
 
-    cleanupAbandonedOrders();
-  }, [user]);
+  //   cleanupAbandonedOrders();
+  // }, [user]);
 
   const fetchAddresses = async () => {
     if (!user) return;
@@ -171,57 +171,44 @@ const CheckoutPage = () => {
     setError(null);
 
     try {
-      // Create order in database
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          total_amount: total,
-          shipping_cost: shippingCost,
-          status: 'pending',
-          payment_status: 'pending',
-          shipping_address: selectedAddress,
-          notes: orderNotes,
-          estimated_delivery: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        })
-        .select()
-        .single();
+      // Store order data temporarily (don't create in database yet)
+      const orderData = {
+        user_id: user.id,
+        total_amount: total,
+        shipping_cost: shippingCost,
+        status: 'confirmed', // Will be confirmed immediately after payment
+        payment_status: 'paid', // Will be paid immediately after payment
+        shipping_address: {
+          full_name: selectedAddress.full_name,
+          phone: selectedAddress.phone,
+          address_line_1: selectedAddress.address_line_1,
+          address_line_2: selectedAddress.address_line_2 || '',
+          city: selectedAddress.city,
+          state: selectedAddress.state,
+          postal_code: selectedAddress.postal_code,
+          country: selectedAddress.country || 'India'
+        },
+        notes: orderNotes,
+        estimated_delivery: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        order_items: items.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          size: item.size,
+          price: item.product.price
+        }))
+      };
 
-      if (orderError) throw orderError;
+      console.log('Storing order data for payment:', orderData);
 
-      // Create order items
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        size: item.size,
-        price: item.product.price
-      }));
+      // Store order data in session storage temporarily
+      sessionStorage.setItem('pendingOrderData', JSON.stringify(orderData));
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Create order tracking
-      await supabase
-        .from('order_tracking')
-        .insert({
-          order_id: order.id,
-          status: 'Order Placed',
-          message: 'Your order has been placed and is awaiting payment.',
-          estimated_delivery: order.estimated_delivery
-        });
-
-      // Store the created order ID
-      setCreatedOrderId(order.id);
-
-      // Move to payment step
+      // Move to payment step (no database order created yet)
       setCurrentStep(3);
 
     } catch (error) {
-      setError('Failed to create order. Please try again.');
+      console.error('Failed to prepare order data:', error);
+      setError(`Failed to prepare order: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -229,8 +216,8 @@ const CheckoutPage = () => {
 
   // Handle payment success
   const handlePaymentSuccess = async (paymentId: string) => {
-    if (!user || !createdOrderId) {
-      setError('Order information missing. Please try again.');
+    if (!user) {
+      setError('User information missing. Please try again.');
       return;
     }
 
@@ -238,19 +225,83 @@ const CheckoutPage = () => {
     setError(null);
 
     try {
-      // Update order with payment information
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({
-          payment_status: 'paid',
+      // Get stored order data
+      const storedOrderData = sessionStorage.getItem('pendingOrderData');
+      if (!storedOrderData) {
+        throw new Error('Order data not found. Please try again.');
+      }
+
+      const orderData = JSON.parse(storedOrderData);
+
+      // Verify payment with Razorpay before creating order
+      const verificationResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          razorpay_order_id: paymentId,
           razorpay_payment_id: paymentId,
-          status: 'confirmed'
+          razorpay_signature: '', // This will be provided by Razorpay callback
+        }),
+      });
+
+      const verificationData = await verificationResponse.json();
+
+      if (!verificationData.success) {
+        throw new Error('Payment verification failed');
+      }
+
+      console.log('Payment verified successfully, creating order...');
+
+      // Create order in database ONLY after successful payment verification
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          ...orderData,
+          razorpay_payment_id: paymentId,
+          razorpay_order_id: paymentId
         })
-        .eq('id', createdOrderId);
+        .select()
+        .single();
 
-      if (updateError) throw updateError;
+      if (orderError) {
+        console.error('Order creation error:', orderError);
+        throw orderError;
+      }
 
-      // Deduct stock from products
+      console.log('Order created successfully:', order);
+
+      // Create order items
+      const orderItems = orderData.order_items.map(item => ({
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        size: item.size,
+        price: item.price
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) {
+        console.error('Order items creation error:', itemsError);
+        throw itemsError;
+      }
+
+      // Create order tracking
+      await supabase
+        .from('order_tracking')
+        .insert({
+          order_id: order.id,
+          status: 'Order Confirmed',
+          message: 'Payment has been successfully processed and order is confirmed.',
+          estimated_delivery: order.estimated_delivery
+        });
+
+      // Deduct stock from products only after order is confirmed
       for (const item of items) {
         const newStock = item.product.stock_quantity - item.quantity;
         const { error: stockError } = await supabase
@@ -259,178 +310,101 @@ const CheckoutPage = () => {
           .eq('id', item.product_id);
 
         if (stockError) {
-          // Log stock update error but don't fail the order
+          console.error('Stock update failed for product:', item.product_id, stockError);
         }
       }
 
-      // Create order tracking entry
-      await supabase
-        .from('order_tracking')
-        .insert({
-          order_id: createdOrderId,
-          status: 'Payment Confirmed',
-          message: 'Payment has been confirmed. Your order is being processed.',
-          estimated_delivery: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        });
-
-      // Create notification
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: user.id,
-          title: 'Order Confirmed',
-          message: `Your order #${createdOrderId} has been confirmed and payment received.`,
-          type: 'order_confirmation',
-          read: false
-        });
-
-      // Clear cart
-      clearCart();
-
-      // Navigate to order confirmation
-      navigate(`/order-confirmation/${createdOrderId}`);
-
-    } catch (error) {
-      setError('Payment processed but there was an issue updating your order. Please contact support.');
-      setTimeout(() => {
-        navigate('/');
-      }, 3000);
-    } finally {
-      setProcessingPayment(false);
-      setPaymentCompleted(true);
-    }
-  };
-
-  // Handle payment failure or cancellation
-  const handlePaymentFailure = async (error: string) => {
-    if (!createdOrderId) {
-      setError(`Payment failed: ${error}`);
-      return;
-    }
-
-    try {
-      // Update order status to failed
-      await supabase
-        .from('orders')
-        .update({
-          payment_status: 'failed',
-          status: 'cancelled'
-        })
-        .eq('id', createdOrderId);
-
-      // Create order tracking entry for failed payment
-      await supabase
-        .from('order_tracking')
-        .insert({
-          order_id: createdOrderId,
-          status: 'Payment Failed',
-          message: `Payment failed: ${error}. Order has been cancelled.`,
-          estimated_delivery: null
-        });
-
-      // Create notification for failed payment
-      if (user) {
+      // Create notification for successful payment
+      try {
         await supabase
           .from('notifications')
           .insert({
             user_id: user.id,
-            title: 'Payment Failed',
-            message: `Payment for order #${createdOrderId} failed. Your order has been cancelled.`,
-            type: 'payment_failed',
+            title: 'Payment Successful',
+            message: `Payment for order #${order.id} has been confirmed. Your order is being processed.`,
+            type: 'order',
             read: false
           });
+      } catch (notificationError) {
+        console.error('Failed to create notification:', notificationError);
+        // Don't fail the entire process if notification fails
       }
 
-      setError(`Payment failed: ${error}. Your order has been cancelled.`);
+      // Clear stored order data
+      sessionStorage.removeItem('pendingOrderData');
+
+      // Clear cart and show success
+      clearCart();
+      setPaymentCompleted(true);
+      setShowSuccess(true);
+
+      // Navigate to order confirmation after a short delay
+      setTimeout(() => {
+        navigate(`/orders/${order.id}`);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Payment confirmation error:', error);
+      setError(`Payment was successful but order creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
-      // Reset the checkout state
-      setCreatedOrderId(null);
-      setCurrentStep(2); // Go back to review step
-      
-    } catch (cleanupError) {
-      setError(`Payment failed: ${error}. Please contact support for assistance.`);
+      // Clear stored order data on error
+      sessionStorage.removeItem('pendingOrderData');
+    } finally {
+      setProcessingPayment(false);
     }
+  };
+
+  const handlePaymentFailure = async (error: string) => {
+    console.error('Payment failed:', error);
+    setError(`Payment failed: ${error}`);
+    
+    // Clear stored order data
+    sessionStorage.removeItem('pendingOrderData');
+    
+    // Reset the checkout state
+    setCurrentStep(2); // Go back to review step
   };
 
   // Handle payment cancellation (user closed Razorpay)
   const handlePaymentCancellation = async () => {
-    if (!createdOrderId) {
-      setError('Payment was cancelled.');
-      return;
-    }
-
-    try {
-      // Update order status to cancelled
-      await supabase
-        .from('orders')
-        .update({
-          payment_status: 'cancelled',
-          status: 'cancelled'
-        })
-        .eq('id', createdOrderId);
-
-      // Create order tracking entry for cancelled payment
-      await supabase
-        .from('order_tracking')
-        .insert({
-          order_id: createdOrderId,
-          status: 'Payment Cancelled',
-          message: 'Payment was cancelled by the user. Order has been cancelled.',
-          estimated_delivery: null
-        });
-
-      // Create notification for cancelled payment
-      if (user) {
-        await supabase
-          .from('notifications')
-          .insert({
-            user_id: user.id,
-            title: 'Payment Cancelled',
-            message: `Payment for order #${createdOrderId} was cancelled. Your order has been cancelled.`,
-            type: 'payment_cancelled',
-            read: false
-          });
-      }
-
-      setError('Payment was cancelled. Your order has been cancelled.');
-      
-      // Reset the checkout state
-      setCreatedOrderId(null);
-      setCurrentStep(2); // Go back to review step
-      
-    } catch (cleanupError) {
-      setError('Payment was cancelled. Please try again.');
-    }
+    console.log('Payment was cancelled by user');
+    setError('Payment was cancelled.');
+    
+    // Clear stored order data
+    sessionStorage.removeItem('pendingOrderData');
+    
+    // Reset the checkout state
+    setCurrentStep(2); // Go back to review step
   };
 
-  // Handle browser close/navigation during payment
-  useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (createdOrderId && !paymentCompleted) {
-        // User is trying to leave during payment
-        event.preventDefault();
-        event.returnValue = 'Payment is in progress. Are you sure you want to leave?';
-        return event.returnValue;
-      }
-    };
+  // Enhanced page unload and visibility change handlers - REMOVED since we don't create draft orders anymore
+  // useEffect(() => {
+  //   if (createdOrderId && currentStep === 3) {
+  //     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+  //       if (!paymentCompleted) {
+  //         event.preventDefault();
+  //         event.returnValue = 'You have a pending payment. Are you sure you want to leave?';
+  //         return event.returnValue;
+  //       }
+  //     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && createdOrderId && !paymentCompleted) {
-        // User switched tabs or minimized browser during payment
-        // We'll handle this in the payment callbacks
-      }
-    };
+  //     const handleVisibilityChange = () => {
+  //       if (document.hidden && !paymentCompleted) {
+  //         // User switched tabs or minimized browser during payment
+  //         console.log('User left the page during payment process');
+  //         // Don't immediately cancel - give them time to return
+  //       }
+  //     };
 
-    if (createdOrderId && !paymentCompleted) {
-      window.addEventListener('beforeunload', handleBeforeUnload);
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-    }
+  //     window.addEventListener('beforeunload', handleBeforeUnload);
+  //     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [createdOrderId, paymentCompleted]);
+  //     return () => {
+  //       window.removeEventListener('beforeunload', handleBeforeUnload);
+  //       document.removeEventListener('visibilitychange', handleVisibilityChange);
+  //     };
+  //   }
+  // }, [createdOrderId, currentStep, paymentCompleted]);
 
   const canProceedToNext = () => {
     switch (currentStep) {
@@ -649,12 +623,12 @@ const CheckoutPage = () => {
                 />
               )}
 
-                {currentStep === 3 && createdOrderId && (
+                {currentStep === 3 && (
                   <PaymentForm
                     paymentMethod={paymentMethod}
                     onPaymentMethodChange={setPaymentMethod}
                     total={total}
-                    orderId={createdOrderId}
+                    orderId={null} // No order ID yet since we create it after payment
                     customerInfo={{
                       name: selectedAddress?.full_name || '',
                       email: user?.email || '',

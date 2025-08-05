@@ -26,6 +26,89 @@ import { supabase } from '../../lib/supabase';
 import { formatDate, formatDateTime } from '../../lib/dateUtils';
 import AdminOrders from './AdminOrders';
 
+// Helper function to group flat order data into structured orders
+function groupOrders(flatOrders: any[]): Order[] {
+  const ordersMap: { [orderId: string]: Order } = {};
+
+  flatOrders.forEach(row => {
+    if (!ordersMap[row.order_id]) {
+      // Parse shipping address from JSONB
+      let shippingAddress = {
+        full_name: '',
+        address_line1: '',
+        address_line2: '',
+        city: '',
+        state: '',
+        postal_code: '',
+        country: 'India',
+        phone: ''
+      };
+      
+      try {
+        if (row.shipping_address) {
+          const parsed = typeof row.shipping_address === 'string' 
+            ? JSON.parse(row.shipping_address) 
+            : row.shipping_address;
+          shippingAddress = {
+            full_name: parsed.full_name || '',
+            address_line1: parsed.address_line_1 || parsed.address_line1 || '',
+            address_line2: parsed.address_line_2 || parsed.address_line2 || '',
+            city: parsed.city || '',
+            state: parsed.state || '',
+            postal_code: parsed.postal_code || '',
+            country: parsed.country || 'India',
+            phone: parsed.phone || ''
+          };
+        }
+      } catch (e) {
+        // Return empty object if parsing fails
+      }
+
+      ordersMap[row.order_id] = {
+        id: row.order_id,
+        order_number: row.order_number || row.order_id.slice(0, 8).toUpperCase(),
+        total_amount: Number(row.total_amount) || 0,
+        status: row.status || 'pending',
+        created_at: row.created_at || new Date().toISOString(),
+        user_id: row.user_id,
+        payment_status: row.payment_status || 'pending',
+        shipping_cost: Number(row.shipping_cost) || 0,
+        tax_amount: Number(row.tax_amount) || 0,
+        discount_amount: Number(row.discount_amount) || 0,
+        notes: row.notes || '',
+        shipping_address: shippingAddress,
+        order_items: [],
+        user: {
+          email: row.user_email || '',
+          user_profiles: {
+            full_name: row.user_full_name || '',
+            phone: row.user_phone || '',
+            gender: row.user_gender || '',
+            date_of_birth: row.user_date_of_birth || ''
+          }
+        }
+      };
+    }
+    
+    // Only add item if it exists
+    if (row.order_item_id) {
+      ordersMap[row.order_id].order_items.push({
+        id: row.order_item_id,
+        quantity: Number(row.quantity) || 0,
+        size: String(row.size || ''),
+        price: Number(row.item_price) || 0,
+        product_id: row.product_id,
+        product: {
+          name: row.product_name || 'Unknown Product',
+          images: Array.isArray(row.product_images) ? row.product_images : (row.product_images ? [row.product_images] : [])
+        }
+      });
+    }
+  });
+
+  return Object.values(ordersMap);
+}
+
 interface Product {
   id: string;
   name: string;
@@ -84,6 +167,8 @@ interface Order {
     user_profiles: {
       full_name: string;
       phone: string;
+      gender: string;
+      date_of_birth: string;
     };
   };
 }
@@ -190,24 +275,10 @@ const AdminDashboard = () => {
         throw productsError;
       }
 
-      // Fetch orders with order items
+      // Fetch orders from admin_orders_flat view
       const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items(
-            id,
-            quantity,
-            size,
-            price,
-            product_id,
-            products!order_items_product_id_fkey(
-              id,
-              name,
-              images
-            )
-          )
-        `)
+        .from('admin_orders_flat')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (ordersError) {
@@ -266,24 +337,27 @@ const AdminDashboard = () => {
         // Continue with empty data
       }
 
+      // Group the flat order data into structured orders
+      const groupedOrders = groupOrders(ordersData || []);
+      
       // Merge orders with complete user data
-      const ordersWithUserData = ordersData?.map(order => {
+      const ordersWithUserData = groupedOrders.map(order => {
         const userEmail = userEmailsMap.get(order.user_id) || 'N/A';
+        const userData = completeUsersData.find((u: any) => u.id === order.user_id);
         
         return {
           ...order,
           user: {
             email: userEmail,
             user_profiles: {
-              full_name: completeUsersData.find((u: any) => u.id === order.user_id)?.full_name || 'N/A',
-              phone: completeUsersData.find((u: any) => u.id === order.user_id)?.phone || 'N/A',
-              gender: completeUsersData.find((u: any) => u.id === order.user_id)?.gender || 'N/A',
-              date_of_birth: completeUsersData.find((u: any) => u.id === order.user_id)?.date_of_birth || 'N/A',
-              is_admin: completeUsersData.find((u: any) => u.id === order.user_id)?.is_admin || false
+              full_name: userData?.full_name || 'N/A',
+              phone: userData?.phone || 'N/A',
+              gender: userData?.gender || 'N/A',
+              date_of_birth: userData?.date_of_birth || 'N/A'
             }
           }
         };
-      }) || [];
+      });
 
       setProducts(productsData || []);
       setOrders(ordersWithUserData || []);
