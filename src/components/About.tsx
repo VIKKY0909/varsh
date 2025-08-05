@@ -1,6 +1,6 @@
 import React from 'react';
 import { Heart, Award, Users, Globe, Shield, Truck, Star } from 'lucide-react';
-import teamImage from '../../public/team.jpg';
+import teamImage from '../public/team.jpg';
 
 const AboutUs = () => {
   const stats = [
