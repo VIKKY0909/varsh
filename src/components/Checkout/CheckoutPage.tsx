@@ -316,15 +316,15 @@ const CheckoutPage = () => {
 
       // Create notification for successful payment
       try {
-        await supabase
-          .from('notifications')
-          .insert({
-            user_id: user.id,
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.id,
             title: 'Payment Successful',
             message: `Payment for order #${order.id} has been confirmed. Your order is being processed.`,
             type: 'order',
-            read: false
-          });
+          read: false
+        });
       } catch (notificationError) {
         console.error('Failed to create notification:', notificationError);
         // Don't fail the entire process if notification fails
@@ -356,25 +356,25 @@ const CheckoutPage = () => {
 
   const handlePaymentFailure = async (error: string) => {
     console.error('Payment failed:', error);
-    setError(`Payment failed: ${error}`);
+      setError(`Payment failed: ${error}`);
     
     // Clear stored order data
     sessionStorage.removeItem('pendingOrderData');
-    
-    // Reset the checkout state
-    setCurrentStep(2); // Go back to review step
+      
+      // Reset the checkout state
+      setCurrentStep(2); // Go back to review step
   };
 
   // Handle payment cancellation (user closed Razorpay)
   const handlePaymentCancellation = async () => {
     console.log('Payment was cancelled by user');
-    setError('Payment was cancelled.');
+      setError('Payment was cancelled.');
     
     // Clear stored order data
     sessionStorage.removeItem('pendingOrderData');
-    
-    // Reset the checkout state
-    setCurrentStep(2); // Go back to review step
+      
+      // Reset the checkout state
+      setCurrentStep(2); // Go back to review step
   };
 
   // Enhanced page unload and visibility change handlers - REMOVED since we don't create draft orders anymore
