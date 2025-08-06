@@ -4,6 +4,7 @@ import FeaturedProducts from '../components/Home/FeaturedProducts';
 import Categories from '../components/Home/Categories';
 import WhyChooseUs from '../components/Home/WhyChooseUs';
 import Testimonials from '../components/Home/Testimonials';
+import FashionResources from '../components/Home/FashionResources';
 
 const Home = () => {
   return (
@@ -12,6 +13,7 @@ const Home = () => {
       <Categories />
       {/* <FeaturedProducts /> */}
       <WhyChooseUs />
+      <FashionResources />
       {/* <Testimonials /> */}
     </div>
   );

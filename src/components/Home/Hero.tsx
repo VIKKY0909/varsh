@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import heroImg from "../../lib/5dec5227-cf34-4607-a33e-21c33efd7203_20250725_014719_0000.jpg";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Hero = () => {
 const navigate = useNavigate();
@@ -24,13 +24,13 @@ const navigate = useNavigate();
             </div>
             
             <h1 className="text-5xl lg:text-6xl font-bold text-mahogany leading-tight mb-6">
-              Timeless
-              <span className="block text-rose-gold">Ethnic</span>
-              <span className="block">Elegance</span>
+              Premium
+              <span className="block text-rose-gold">Handcrafted</span>
+              <span className="block">Kurtis</span>
             </h1>
             
             <h2 className="text-xl text-gray-600 mb-8 leading-relaxed max-w-lg">
-              Discover handcrafted ethnic wear that celebrates tradition while embracing contemporary style. Each piece tells a story of heritage and artistry.
+              Discover <Link to="/products" className="text-rose-gold hover:text-mahogany font-semibold">handcrafted ethnic wear</Link> that celebrates tradition while embracing contemporary style. Each piece tells a story of <Link to="/about" className="text-rose-gold hover:text-mahogany font-semibold">heritage and artistry</Link>.
             </h2>
             
             <div className="flex flex-col sm:flex-row gap-4">
