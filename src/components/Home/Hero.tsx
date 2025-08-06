@@ -23,15 +23,15 @@ const navigate = useNavigate();
               ✨ New Collection Arrived
             </div>
             
-            <h2 className="text-5xl lg:text-6xl font-bold text-mahogany leading-tight mb-6">
+            <h1 className="text-5xl lg:text-6xl font-bold text-mahogany leading-tight mb-6">
               Timeless
               <span className="block text-rose-gold">Ethnic</span>
               <span className="block">Elegance</span>
-            </h2>
+            </h1>
             
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-lg">
+            <h2 className="text-xl text-gray-600 mb-8 leading-relaxed max-w-lg">
               Discover handcrafted ethnic wear that celebrates tradition while embracing contemporary style. Each piece tells a story of heritage and artistry.
-            </p>
+            </h2>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <button onClick={() => navigate('/products')} className="bg-rose-gold text-white px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group">

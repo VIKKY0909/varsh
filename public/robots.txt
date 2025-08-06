@@ -1,0 +1,17 @@
+# Robots.txt for Varsh Ethnic Wears
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /checkout
+Disallow: /cart
+Disallow: /profile
+Disallow: /orders
+Disallow: /auth
+Disallow: /wishlist
+
+# Sitemap location
+Sitemap: https://varshethnicwears.com/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1
