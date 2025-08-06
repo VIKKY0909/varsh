@@ -6,6 +6,7 @@ import { useCart } from '../../contexts/CartContext';
 
 const NAV_LINKS = [
   { name: 'Home', path: '/' },
+  { name: 'Products', path: '/products' },
   { name: 'About Us', path: '/about' },
   { name: 'Contact Us', path: '/contact' },
 ];
@@ -57,43 +58,44 @@ const Header = () => {
   const isAdmin = user?.email === 'vikivahane@gmail.com';
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur shadow-md border-b border-rose-100">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-lg border-b border-rose-100">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-rose-50 to-pink-50 text-center py-2 px-4 text-xs sm:text-sm text-mahogany">
-        <span className="hidden sm:inline">Free shipping on orders above 999 | Authentic handcrafted ethnic wear</span>
-        <span className="sm:hidden">Free shipping above ₹999</span>
+      <div className="bg-gradient-to-r from-rose-gold to-mahogany text-white text-center py-2 px-4 text-xs sm:text-sm">
+        <span className="hidden sm:inline">🚚 Free shipping on orders above ₹999 | ✨ Authentic handcrafted ethnic wear</span>
+        <span className="sm:hidden">🚚 Free shipping above ₹999</span>
       </div>
       
       {/* Main Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 relative">
           {/* Logo/Brand */}
-          <Link to="/" className="flex-shrink-0">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-mahogany tracking-wide">
-              Varsh <span className="text-rose-gold">Ethnic Wears</span>
-            </h1>
+          <Link to="/" className="flex-shrink-0 group">
+            <div className="flex flex-col">
+              <h1 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-mahogany tracking-wide group-hover:text-rose-gold transition-colors duration-200">
+                Varsh <span className="text-rose-gold">Ethnic Wears</span>
+              </h1>
+              {/* <span className="text-xs sm:text-sm text-gray-500 hidden sm:block tracking-wider">Handcrafted with ❤️</span> */}
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 mx-auto">
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6 mx-auto ml-8 xl:ml-12">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className={`relative px-2 py-1 font-semibold text-base xl:text-lg transition-colors duration-200 group ${
+                className={`relative px-3 py-2 font-semibold text-sm xl:text-base rounded-lg transition-all duration-200 group ${
                   isActive(link.path)
-                    ? 'text-rose-gold'
-                    : 'text-mahogany hover:text-rose-gold'
+                    ? 'text-white bg-rose-gold shadow-md'
+                    : 'text-mahogany hover:text-rose-gold hover:bg-rose-50'
                 }`}
                 tabIndex={0}
                 aria-current={isActive(link.path) ? 'page' : undefined}
               >
                 <span>{link.name}</span>
-                <span
-                  className={`absolute left-0 -bottom-1 w-full h-0.5 rounded bg-rose-gold transition-all duration-300 ${
-                    isActive(link.path) ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 group-hover:opacity-100 group-hover:scale-x-100'
-                  }`}
-                />
+                {!isActive(link.path) && (
+                  <span className="absolute inset-0 rounded-lg border-2 border-rose-gold opacity-0 group-hover:opacity-20 transition-opacity duration-200" />
+                )}
               </Link>
             ))}
           </nav>
@@ -116,10 +118,10 @@ const Header = () => {
           </div>
 
           {/* Right Icons */}
-          <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* Mobile Search */}
             <button
-              className="md:hidden p-1.5 sm:p-2 hover:bg-rose-50 rounded-full transition-colors"
+              className="md:hidden p-2 hover:bg-rose-50 rounded-xl transition-all duration-200 hover:scale-105"
               aria-label="Open search"
             >
               <Search className="w-4 h-4 sm:w-5 sm:h-5 text-mahogany hover:text-rose-gold transition-colors" />
@@ -128,7 +130,7 @@ const Header = () => {
             {/* Wishlist */}
             <Link
               to="/wishlist"
-              className="relative p-1.5 sm:p-2 hover:bg-rose-50 rounded-full transition-colors group"
+              className="relative p-2 hover:bg-rose-50 rounded-xl transition-all duration-200 group hover:scale-105"
               aria-label="Wishlist"
             >
               <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-mahogany group-hover:text-rose-gold transition-colors" />
@@ -137,12 +139,12 @@ const Header = () => {
             {/* Cart */}
             <Link
               to="/cart"
-              className="relative p-1.5 sm:p-2 hover:bg-rose-50 rounded-full transition-colors group"
+              className="relative p-2 hover:bg-rose-50 rounded-xl transition-all duration-200 group hover:scale-105"
               aria-label="Cart"
             >
               <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-mahogany group-hover:text-rose-gold transition-colors" />
               {getTotalItems() > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 bg-rose-gold text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center font-medium animate-bounce">
+                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-rose-gold to-mahogany text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg animate-pulse">
                   {getTotalItems()}
                 </span>
               )}
@@ -153,7 +155,7 @@ const Header = () => {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen((open) => !open)}
-                  className="p-1.5 sm:p-2 hover:bg-rose-50 rounded-full transition-colors group"
+                  className="p-2 hover:bg-rose-50 rounded-xl transition-all duration-200 group hover:scale-105"
                   aria-label="Account menu"
                   aria-haspopup="true"
                   aria-expanded={isUserMenuOpen}
@@ -215,7 +217,7 @@ const Header = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-1.5 sm:p-2 text-mahogany hover:text-rose-gold transition-colors ml-1"
+              className="lg:hidden p-2 text-mahogany hover:text-rose-gold hover:bg-rose-50 rounded-xl transition-all duration-200 ml-1 hover:scale-105"
               aria-label="Open menu"
             >
               {isMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
@@ -242,24 +244,38 @@ const Header = () => {
         {isMenuOpen && (
           <>
             <div
-              className="fixed inset-0 bg-black bg-opacity-30 z-40 animate-fade-in"
+              className="fixed inset-0 bg-black bg-opacity-40 z-40 animate-fade-in"
               onClick={() => setIsMenuOpen(false)}
               aria-hidden="true"
             />
-            <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-2xl border-t border-rose-100 z-50 animate-slide-down rounded-b-2xl mx-4 sm:mx-0">
-              <nav className="px-4 py-4 sm:py-6 space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto flex flex-col items-center">
-                {NAV_LINKS.map((link) => (
+            <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-2xl border-t border-rose-100 z-50 animate-slide-down rounded-b-3xl mx-2 sm:mx-4">
+              <nav className="px-4 py-6 space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-bold text-mahogany">Navigate</h3>
+                  <p className="text-sm text-gray-500">Explore our collection</p>
+                </div>
+                {NAV_LINKS.map((link, index) => (
                   <Link
                     key={link.name}
                     to={link.path}
-                    className={`block w-full text-center py-2.5 sm:py-3 text-base sm:text-lg font-semibold rounded-lg transition-colors duration-200 ${
-                      isActive(link.path) ? 'bg-rose-gold text-white' : 'text-mahogany hover:bg-rose-gold hover:text-white'
+                    className={`flex items-center justify-between w-full px-4 py-3 text-base font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] ${
+                      isActive(link.path) 
+                        ? 'bg-gradient-to-r from-rose-gold to-mahogany text-white shadow-lg' 
+                        : 'text-mahogany hover:bg-rose-50 hover:text-rose-gold border border-gray-100'
                     }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {link.name}
+                    <span>{link.name}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      isActive(link.path) ? 'bg-white/20' : 'bg-rose-gold/10 text-rose-gold'
+                    }`}>
+                      {index === 1 ? '🛍️' : index === 0 ? '🏠' : index === 2 ? '👥' : '📞'}
+                    </span>
                   </Link>
                 ))}
+                <div className="pt-4 border-t border-gray-100 mt-4">
+                  <p className="text-xs text-gray-500 text-center">Handcrafted with ❤️ by Varsh Team</p>
+                </div>
               </nav>
             </div>
           </>

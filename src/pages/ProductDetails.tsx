@@ -380,10 +380,10 @@ const ProductDetails = () => {
                 <ZoomIn className="w-4 h-4" />
                 View All Images
               </button>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              {/* <div className="flex items-center gap-2 text-sm text-gray-600">
                 <RotateCcw className="w-4 h-4" />
                 <span>360° View</span>
-              </div>
+              </div> */}
             </div>
           </div>
 

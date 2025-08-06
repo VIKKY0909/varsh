@@ -339,7 +339,9 @@ const Products = () => {
     setSortBy('name');
     setSearchParams({});
     setPagination(prev => ({ ...prev, page: 1 }));
-  }, [setSearchParams]);
+    // Auto-apply filters after clearing
+    fetchProducts(true);
+  }, [setSearchParams, fetchProducts]);
 
   // Load more products
   const loadMoreProducts = useCallback(() => {
@@ -641,11 +643,11 @@ const Products = () => {
               </div>
             ) : (
               <>
-                <div className={`grid gap-6 ${
-                  viewMode === 'grid' 
-                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
-                    : 'grid-cols-1'
-                }`}>
+                                 <div className={`grid gap-3 sm:gap-4 md:gap-6 ${
+                   viewMode === 'grid' 
+                     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4' 
+                     : 'grid-cols-1'
+                 }`}>
                   {products.map((product) => (
                     <div
                       key={product.id}
@@ -653,12 +655,12 @@ const Products = () => {
                         viewMode === 'list' ? 'flex' : ''
                       }`}
                     >
-                      <div className={`relative overflow-hidden ${viewMode === 'list' ? 'w-48 flex-shrink-0' : ''}`}>
+                      <div className={`relative overflow-hidden ${viewMode === 'list' ? 'w-32 sm:w-48 flex-shrink-0' : 'aspect-[3/4]'}`}>
                         <img
                           src={product.images[0]}
                           alt={product.name}
                           className={`object-cover group-hover:scale-105 transition-transform duration-500 ${
-                            viewMode === 'list' ? 'w-full h-full' : 'w-full h-64'
+                            viewMode === 'list' ? 'w-full h-full' : 'w-full h-full'
                           }`}
                           loading="lazy"
                         />
@@ -720,50 +722,56 @@ const Products = () => {
                         </div> */}
                       </div>
 
-                      <div className="p-6 flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-rose-gold font-medium capitalize">{product.category}</span>
+                      <div className="p-4 sm:p-6 flex-1">
+                        <Link to={`/product/${product.id}`} className="block">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-rose-gold font-medium capitalize">{product.category}</span>
 {/*                           <div className="flex items-center">
                             <Star className="w-4 h-4 text-yellow-400 fill-current" />
                             <span className="text-sm text-gray-500 ml-1">{product.rating || 4.8}</span>
                           </div> */}
-                        </div>
-                        
-                        <h3 className="text-lg font-bold text-mahogany mb-2 group-hover:text-rose-gold transition-colors line-clamp-2">
-                          {product.name}
-                        </h3>
+                          </div>
+                          
+                          <h3 className="text-base sm:text-lg font-bold text-mahogany mb-2 group-hover:text-rose-gold transition-colors line-clamp-2">
+                            {product.name}
+                          </h3>
+                        </Link>
                         
                         {viewMode === 'list' && (
-                          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                            {product.description}
-                          </p>
+                          <Link to={`/product/${product.id}`} className="block">
+                            <p className="text-gray-600 text-sm mb-4 line-clamp-2 hover:text-gray-800 transition-colors">
+                              {product.description}
+                            </p>
+                          </Link>
                         )}
                         
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl font-bold text-rose-gold">₹{product.price.toLocaleString()}</span>
+                        <Link to={`/product/${product.id}`} className="block mb-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg sm:text-xl font-bold text-rose-gold">₹{product.price.toLocaleString()}</span>
+                              {product.original_price > product.price && (
+                                <span className="text-xs sm:text-sm text-gray-500 line-through">₹{product.original_price.toLocaleString()}</span>
+                              )}
+                            </div>
                             {product.original_price > product.price && (
-                              <span className="text-sm text-gray-500 line-through">₹{product.original_price.toLocaleString()}</span>
+                              <div className="text-xs sm:text-sm text-green-600 font-medium">
+                                {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% OFF
+                              </div>
                             )}
                           </div>
-                          {product.original_price > product.price && (
-                            <div className="text-sm text-green-600 font-medium">
-                              {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% OFF
-                            </div>
-                          )}
-                        </div>
+                        </Link>
 
-                        <div className="flex gap-2 mb-4">
+                        <div className="flex flex-col sm:flex-row gap-2 mb-4">
                           <Link
                             to={`/product/${product.id}`}
-                            className="flex-1 bg-gray-100 text-mahogany py-2 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-center text-sm"
+                            className="flex-1 bg-gray-100 text-mahogany py-2 px-3 sm:px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-center text-xs sm:text-sm"
                           >
                             View Details
                           </Link>
                           <button 
                             onClick={() => handleAddToCart(product.id, product.size)}
                             disabled={product.stock_quantity === 0 || processingCart.has(product.id)}
-                            className="flex-1 bg-rose-gold text-white py-2 px-4 rounded-lg font-semibold hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            className="flex-1 bg-rose-gold text-white py-2 px-3 sm:px-4 rounded-lg font-semibold hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                           >
                             {processingCart.has(product.id) ? 'Adding...' : 
                              product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}

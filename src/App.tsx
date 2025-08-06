@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
@@ -28,6 +29,7 @@ function App() {
       <CartProvider>
         <Router>
           <div className="min-h-screen bg-white flex flex-col">
+            <ScrollToTop />
             <Header />
             <main className="flex-1">
               <Routes>

@@ -17,8 +17,8 @@ const navigate = useNavigate();
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div className="text-left">
+          {/* Left Content - Order 2 on mobile, 1 on desktop */}
+          <div className="text-left order-2 lg:order-1">
             <div className="inline-block bg-gradient-to-r from-blush-pink to-rose-gold text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
               ✨ New Collection Arrived
             </div>
@@ -61,8 +61,8 @@ const navigate = useNavigate();
             </div> */}
           </div>
 
-          {/* Right Content - Image */}
-          <div className="relative">
+          {/* Right Content - Image - Order 1 on mobile, 2 on desktop */}
+          <div className="relative order-1 lg:order-2">
             <div className="absolute inset-0 bg-gradient-to-br from-blush-pink to-rose-gold rounded-3xl transform rotate-6 opacity-20"></div>
             <div className="relative bg-white rounded-3xl overflow-hidden shadow-2xl">
               <img
