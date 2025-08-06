@@ -54,17 +54,17 @@ const AboutUs = () => {
               <h2 className="text-3xl font-bold text-mahogany mb-6">Our Story</h2>
               <div className="space-y-4 text-gray-700 text-lg leading-relaxed">
                 <p>
-                  We didn't just start a label—we started an <span className="font-semibold text-mahogany">एहसास</span>. 
-                  A feeling that every skin tone deserves to shine. A belief that <span className="font-semibold text-mahogany">सुंदरता</span> isn't one-size-fits-all.
+                  We didn't just start a label we started an <span className="font-semibold text-mahogany">एहसास</span>.
                 </p>
                 <p>
-                  We're <span className="font-semibold text-mahogany">Varsha</span> (Founder & CEO), <span className="font-semibold text-mahogany">Vivek</span> and <span className="font-semibold text-mahogany">Ayush</span> (Co-founders)—three friends who grew up surrounded by <span className="font-semibold text-mahogany">रंग, रिवाज़, and रूट्स</span>. 
+                  A feeling that every skin tone deserves to shine. A belief that <span className="font-semibold text-mahogany">सुंदरता</span> isn't one-size-fits-all. 
+                  We're <span className="font-semibold text-mahogany">Vivek</span>, <span className="font-semibold text-mahogany">Varsha</span>, and <span className="font-semibold text-mahogany">Ayush</span> three friends who grew up surrounded by <span className="font-semibold text-mahogany">रंग, रिवाज़</span>, and roots. 
                   And we wanted to bring all of that into fashion that feels like <span className="font-semibold text-mahogany">अपनापन</span>.
                 </p>
                 <p>
-                  Our kurtis are not just stitched for style—they carry <span className="font-semibold text-mahogany">परंपरा</span> with a touch of today. 
-                  From soft cottons to vibrant prints, from festive <span className="font-semibold text-mahogany">जश्न</span> to daily comfort—each piece is made with love for 
-                  <span className="font-semibold text-mahogany">हर रंग की त्वचा</span> and <span className="font-semibold text-mahogany">हर दिल का अंदाज़</span>.
+                  Our kurtis are not just stitched for style they carry <span className="font-semibold text-mahogany">परंपरा</span> with a touch of today. 
+                  From soft cottons to vibrant prints, from festive celebration to daily comfort each piece is made with love for 
+                  <span className="font-semibold text-mahogany">Every skin colour</span> and for <span className="font-semibold text-mahogany">Every Soul</span>.
                 </p>
                 <p className="text-xl font-semibold text-mahogany">
                   This is not just ethnic wear. This is your story, <span className="text-rose-gold">आपकी पहचान</span>.
