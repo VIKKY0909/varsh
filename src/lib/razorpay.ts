@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 
 // Razorpay configuration
 export const RAZORPAY_CONFIG = {
+
   key_id: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder',
   key_secret: import.meta.env.VITE_RAZORPAY_KEY_SECRET || 'placeholder_secret'
 };
