@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Check, CreditCard, Truck, MapPin, User, X, Trash2, ShoppingBag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, CreditCard, Truck, X, ShoppingBag } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -32,15 +32,15 @@ const CheckoutPage = () => {
   const [showOrderSummary, setShowOrderSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [, setPaymentCompleted] = useState(false);
   
-  const { items, getTotalPrice, getTotalItems, clearCart, removeFromCart, updateQuantity } = useCart();
+  const { items, getTotalPrice, getTotalItems, getDeliveryCharges, clearCart, removeFromCart, updateQuantity } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
   // Calculate totals
   const subtotal = getTotalPrice();
-  const shippingCost = subtotal > 999 ? 0 : 99;
+  const shippingCost = getDeliveryCharges();
   const total = subtotal + shippingCost;
 
   const steps = [
@@ -302,7 +302,7 @@ const CheckoutPage = () => {
         });
 
       // Deduct stock from products only after order is confirmed
-      for (const item of items) {
+      for (const item of items as any[]) {
         const newStock = item.product.stock_quantity - item.quantity;
         const { error: stockError } = await supabase
           .from('products')
@@ -733,10 +733,10 @@ const CheckoutPage = () => {
                   <span className="text-gray-600">Shipping</span>
                   <span>{shippingCost === 0 ? 'FREE' : `₹${shippingCost}`}</span>
                 </div>
-                {subtotal > 999 && (
+                {shippingCost === 0 && subtotal > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>Free shipping applied!</span>
-                    <span>-₹99</span>
+                    <span>FREE</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold border-t pt-3">

@@ -5,15 +5,20 @@ import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 
 const CartPage = () => {
-  const { items, loading, updateQuantity, removeFromCart, getTotalPrice, getTotalItems } = useCart();
+  const { items, loading, updateQuantity, removeFromCart, getTotalPrice, getTotalItems, getDeliveryCharges } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [shippingCost] = useState(99); // Fixed shipping cost
 
   const subtotal = getTotalPrice();
-  const total = subtotal + (subtotal > 1999 ? 0 : shippingCost);
-  const freeShippingThreshold = 999;
-  const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
+  const deliveryCharges = getDeliveryCharges();
+  const total = subtotal + deliveryCharges;
+  
+  // Calculate remaining amount for free delivery
+  const hasDeliveryCharges = items.some(item => item.product.has_delivery_charge);
+  const highestFreeDeliveryThreshold = hasDeliveryCharges 
+    ? Math.max(...items.map(item => item.product.free_delivery_threshold))
+    : 999;
+  const remainingForFreeShipping = Math.max(0, highestFreeDeliveryThreshold - subtotal);
 
   const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
@@ -100,7 +105,7 @@ const CartPage = () => {
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {/* Free Shipping Banner */}
-            {remainingForFreeShipping > 0 && (
+            {remainingForFreeShipping > 0 && hasDeliveryCharges && (
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
                 <div className="flex items-center gap-3">
                   <Truck className="w-5 h-5 text-green-600" />
@@ -111,7 +116,7 @@ const CartPage = () => {
                     <div className="w-full bg-green-200 rounded-full h-2 mt-2">
                       <div
                         className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, (subtotal / freeShippingThreshold) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (subtotal / highestFreeDeliveryThreshold) * 100)}%` }}
                       ></div>
                     </div>
                   </div>
@@ -190,10 +195,10 @@ const CartPage = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
                   <span className="font-medium">
-                    {subtotal > freeShippingThreshold ? (
+                    {deliveryCharges === 0 ? (
                       <span className="text-green-600">FREE</span>
                     ) : (
-                      `₹${shippingCost}`
+                      `₹${deliveryCharges}`
                     )}
                   </span>
                 </div>
@@ -226,7 +231,12 @@ const CartPage = () => {
                 <div className="space-y-3 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     <Truck className="w-4 h-4" />
-                    <span>Free shipping on orders above ₹999 (Expected delivery: 13-14 days)</span>
+                    <span>
+                      {hasDeliveryCharges 
+                        ? `Free shipping on orders above ₹${highestFreeDeliveryThreshold} (Expected delivery: 13-14 days)`
+                        : 'Free shipping on all orders (Expected delivery: 13-14 days)'
+                      }
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <ShoppingBag className="w-4 h-4" />

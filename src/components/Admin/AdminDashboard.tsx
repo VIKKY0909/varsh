@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   BarChart3, 
@@ -12,18 +12,15 @@ import {
   Eye,
   Search,
   Filter,
-  Download,
-  Mail,
   CheckCircle,
   Clock,
   Truck,
   X,
-  Menu,
-  ChevronDown
+  Menu
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { formatDate, formatDateTime } from '../../lib/dateUtils';
+import { formatDate } from '../../lib/dateUtils';
 import AdminOrders from './AdminOrders';
 
 // Helper function to group flat order data into structured orders
@@ -123,6 +120,9 @@ interface Product {
   is_featured: boolean;
   is_new?: boolean;
   is_bestseller?: boolean;
+  has_delivery_charge: boolean;
+  delivery_charge: number;
+  free_delivery_threshold: number;
   created_at: string;
   updated_at?: string;
   images: string[];
@@ -219,6 +219,9 @@ const AdminDashboard = () => {
     is_featured: false,
     description: '',
     images: [] as string[],
+    has_delivery_charge: false,
+    delivery_charge: '',
+    free_delivery_threshold: '999',
   });
   const [productFormError, setProductFormError] = useState('');
 
@@ -756,7 +759,7 @@ const AdminDashboard = () => {
               <h2 className="text-xl md:text-2xl font-bold text-mahogany">Products Management</h2>
               <button
                 className="flex items-center gap-2 bg-rose-gold text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors w-full sm:w-auto justify-center"
-                onClick={() => { setEditingProduct(null); setProductForm({ name: '', price: '', original_price: '', category: '', size: '', color: '', material: '', care_instructions: '', stock_quantity: '', is_featured: false, description: '', images: [] }); setProductModalOpen(true); }}
+                onClick={() => { setEditingProduct(null); setProductForm({ name: '', price: '', original_price: '', category: '', size: '', color: '', material: '', care_instructions: '', stock_quantity: '', is_featured: false, description: '', images: [], has_delivery_charge: false, delivery_charge: '', free_delivery_threshold: '999' }); setProductModalOpen(true); }}
               >
                 <Plus className="w-5 h-5" />
                 Add Product
@@ -790,6 +793,7 @@ const AdminDashboard = () => {
                       <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Product</th>
                       <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Category</th>
                       <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Price</th>
+                      <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Delivery</th>
                       <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Stock</th>
                       <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Status</th>
                       <th className="text-left py-3 px-4 md:px-6 text-sm md:text-base">Actions</th>
@@ -803,6 +807,16 @@ const AdminDashboard = () => {
                         </td>
                         <td className="py-4 px-4 md:px-6 capitalize text-sm md:text-base">{product.category}</td>
                         <td className="py-4 px-4 md:px-6 text-sm md:text-base">₹{product.price.toLocaleString()}</td>
+                        <td className="py-4 px-4 md:px-6 text-sm md:text-base">
+                          {product.has_delivery_charge ? (
+                            <div className="space-y-1">
+                              <div className="text-red-600 font-medium">₹{product.delivery_charge}</div>
+                              <div className="text-xs text-gray-500">Free above ₹{product.free_delivery_threshold}</div>
+                            </div>
+                          ) : (
+                            <span className="text-green-600 font-medium">Free</span>
+                          )}
+                        </td>
                         <td className="py-4 px-4 md:px-6">
                           <span className={`${product.stock_quantity < 5 ? 'text-red-600' : 'text-gray-900'} text-sm md:text-base`}>
                             {product.stock_quantity}
@@ -837,6 +851,9 @@ const AdminDashboard = () => {
                                   is_featured: product.is_featured,
                                   description: product.description || '',
                                   images: product.images || [],
+                                  has_delivery_charge: product.has_delivery_charge || false,
+                                  delivery_charge: product.delivery_charge?.toString() || '0',
+                                  free_delivery_threshold: product.free_delivery_threshold?.toString() || '999',
                                 });
                                 setProductModalOpen(true);
                               }}
@@ -1058,6 +1075,9 @@ const AdminDashboard = () => {
                       is_featured: productForm.is_featured,
                       description: productForm.description,
                       images: productForm.images,
+                      has_delivery_charge: productForm.has_delivery_charge,
+                      delivery_charge: Number(productForm.delivery_charge) || 0,
+                      free_delivery_threshold: Number(productForm.free_delivery_threshold) || 999,
                       updated_at: new Date().toISOString(),
                   };
                   
@@ -1086,7 +1106,7 @@ const AdminDashboard = () => {
                   }
                   
                   setProductModalOpen(false);
-                  setProductForm({ name: '', price: '', original_price: '', category: '', size: '', color: '', material: '', care_instructions: '', stock_quantity: '', is_featured: false, description: '', images: [] });
+                  setProductForm({ name: '', price: '', original_price: '', category: '', size: '', color: '', material: '', care_instructions: '', stock_quantity: '', is_featured: false, description: '', images: [], has_delivery_charge: false, delivery_charge: '', free_delivery_threshold: '999' });
                   setProductFormError('');
                   await fetchDashboardData();
                   alert('Product saved successfully!');
@@ -1166,6 +1186,68 @@ const AdminDashboard = () => {
                       min="0"
                     />
               </div>
+                </div>
+              </div>
+
+              {/* Delivery Charges Section */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-mahogany mb-4">Delivery Charges</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="checkbox" 
+                      checked={productForm.has_delivery_charge} 
+                      onChange={e => setProductForm(f => ({ ...f, has_delivery_charge: e.target.checked }))} 
+                      id="has_delivery_charge" 
+                      className="w-4 h-4 text-rose-gold focus:ring-rose-gold border-gray-300 rounded"
+                    />
+                    <label htmlFor="has_delivery_charge" className="font-medium text-gray-700">
+                      This product has delivery charges
+                    </label>
+                  </div>
+                  
+                  {productForm.has_delivery_charge && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block mb-2 font-medium text-gray-700">
+                          Delivery Charge (₹)
+                        </label>
+                        <input 
+                          type="number" 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent" 
+                          value={productForm.delivery_charge} 
+                          onChange={e => setProductForm(f => ({ ...f, delivery_charge: e.target.value }))} 
+                          placeholder="0"
+                          min="0"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block mb-2 font-medium text-gray-700">
+                          Free Delivery Threshold (₹)
+                        </label>
+                        <input 
+                          type="number" 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent" 
+                          value={productForm.free_delivery_threshold} 
+                          onChange={e => setProductForm(f => ({ ...f, free_delivery_threshold: e.target.value }))} 
+                          placeholder="999"
+                          min="0"
+                        />
+                        <p className="text-sm text-gray-600 mt-1">
+                          Free delivery for orders above this amount
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!productForm.has_delivery_charge && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-green-800 text-sm">
+                        ✓ This product will have free delivery
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

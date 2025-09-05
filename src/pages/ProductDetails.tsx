@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Share2, Star, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Plus, Minus, Facebook, Twitter, Instagram, ZoomIn, ZoomOut, X } from 'lucide-react';
+import { Heart, ShoppingBag, Share2, Truck, Shield, ChevronLeft, ChevronRight, Plus, Minus, Facebook, Twitter, Instagram, ZoomIn, ZoomOut, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,9 @@ interface Product {
   stock_quantity: number;
   is_new: boolean;
   is_bestseller: boolean;
+  has_delivery_charge: boolean;
+  delivery_charge: number;
+  free_delivery_threshold: number;
 }
 
 const ProductDetails = () => {
@@ -35,13 +38,27 @@ const ProductDetails = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   
   // Image gallery states
-  const [isZoomed, setIsZoomed] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showImageModal, setShowImageModal] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
   
-  const { addToCart } = useCart();
+  const { addToCart, items, checkStockAvailability } = useCart();
   const { user } = useAuth();
+
+  // Check if product is already in cart
+  const isProductInCart = () => {
+    if (!product || !selectedSize) return false;
+    return items.some(item => item.product_id === product.id && item.size === selectedSize);
+  };
+
+  // Get current quantity in cart
+  const getCurrentCartQuantity = () => {
+    if (!product || !selectedSize) return 0;
+    const cartItem = items.find(item => item.product_id === product.id && item.size === selectedSize);
+    return cartItem ? cartItem.quantity : 0;
+  };
 
   useEffect(() => {
     if (id) {
@@ -49,6 +66,28 @@ const ProductDetails = () => {
       checkWishlistStatus();
     }
   }, [id, user]);
+
+  // Preload all product images when product is loaded
+  useEffect(() => {
+    if (product && product.images.length > 0) {
+      preloadImages();
+    }
+  }, [product]);
+
+  const preloadImages = () => {
+    if (!product) return;
+    
+    product.images.forEach((imageUrl, index) => {
+      const img = new Image();
+      img.onload = () => {
+        setLoadedImages(prev => new Set([...prev, index]));
+      };
+      img.onerror = () => {
+        console.warn(`Failed to load image ${index}:`, imageUrl);
+      };
+      img.src = imageUrl;
+    });
+  };
 
   const fetchProduct = async () => {
     try {
@@ -62,6 +101,9 @@ const ProductDetails = () => {
       
       setProduct(data);
       setSelectedSize(data.size[0] || '');
+      setSelectedImage(0);
+      setImageLoading(false);
+      setLoadedImages(new Set());
       
       // Fetch related products
       const { data: related } = await supabase
@@ -107,8 +149,39 @@ const ProductDetails = () => {
       alert('Please select a size');
       return;
     }
-    await addToCart(id!, selectedSize, quantity);
-    await fetchProduct();
+    if (!product) return;
+
+    try {
+      // Check if product is already in cart
+      const existingCartItem = items.find(
+        item => item.product_id === product.id && item.size === selectedSize
+      );
+
+      if (existingCartItem) {
+        // Product is already in cart, check if we can add more
+        const currentQuantity = existingCartItem.quantity;
+        const newQuantity = currentQuantity + quantity;
+        
+        // Check if we have enough stock for the new quantity
+        const isAvailable = await checkStockAvailability(product.id, selectedSize, newQuantity);
+        
+        if (isAvailable) {
+          await addToCart(product.id, selectedSize, quantity);
+          await fetchProduct();
+          alert(`Added ${quantity} more to cart! Total quantity: ${newQuantity}`);
+        } else {
+          alert(`Cannot add more. Only ${product.stock_quantity} items available in stock.`);
+        }
+      } else {
+        // Product not in cart, add it
+        await addToCart(product.id, selectedSize, quantity);
+        await fetchProduct();
+        alert('Added to cart successfully!');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Failed to add to cart. Please try again.');
+    }
   };
 
   const handleBuyNow = async () => {
@@ -120,9 +193,42 @@ const ProductDetails = () => {
       alert('Please select a size');
       return;
     }
-    await addToCart(id!, selectedSize, quantity);
-    await fetchProduct();
-    navigate('/checkout');
+    if (!product) return;
+
+    try {
+      // Check if product is already in cart
+      const existingCartItem = items.find(
+        item => item.product_id === product.id && item.size === selectedSize
+      );
+
+      if (existingCartItem) {
+        // Product is already in cart, check if we can add one more
+        const currentQuantity = existingCartItem.quantity;
+        const newQuantity = currentQuantity + quantity;
+        
+        // Check if we have enough stock for the new quantity
+        const isAvailable = await checkStockAvailability(product.id, selectedSize, newQuantity);
+        
+        if (isAvailable) {
+          // Add one more to cart
+          await addToCart(product.id, selectedSize, quantity);
+          await fetchProduct();
+        }
+        // If not available, just proceed to checkout with current cart
+      } else {
+        // Product not in cart, add it
+        await addToCart(product.id, selectedSize, quantity);
+        await fetchProduct();
+      }
+      
+      // Navigate to checkout
+      navigate('/checkout');
+    } catch (error) {
+      console.error('Error in Buy Now:', error);
+      // If there's an error adding to cart, still navigate to checkout
+      // so user can see what's in their cart
+      navigate('/checkout');
+    }
   };
 
   const handleWishlistToggle = async () => {
@@ -184,7 +290,6 @@ const ProductDetails = () => {
 
   const closeImageModal = () => {
     setShowImageModal(false);
-    setIsZoomed(false);
     setZoomLevel(1);
   };
 
@@ -198,6 +303,26 @@ const ProductDetails = () => {
     if (product) {
       setModalImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
     }
+  };
+
+  const handleImageChange = (newIndex: number) => {
+    if (newIndex === selectedImage) return;
+    
+    setImageLoading(true);
+    setSelectedImage(newIndex);
+    
+    // If image is already loaded, stop loading immediately
+    if (loadedImages.has(newIndex)) {
+      setImageLoading(false);
+    }
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
   };
 
   const handleZoom = (direction: 'in' | 'out') => {
@@ -270,10 +395,24 @@ const ProductDetails = () => {
                 className="relative overflow-hidden cursor-zoom-in"
                 onClick={() => openImageModal(selectedImage)}
               >
+                {/* Loading Overlay */}
+                {imageLoading && (
+                  <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold mx-auto mb-4"></div>
+                      <p className="text-mahogany font-medium">Loading image...</p>
+                    </div>
+                  </div>
+                )}
+                
                 <img
                   src={product.images[selectedImage]}
                   alt={product.name}
-                  className="w-full h-96 lg:h-[500px] object-cover transition-transform duration-300 hover:scale-105"
+                  className={`w-full h-96 lg:h-[500px] object-cover transition-all duration-300 hover:scale-105 ${
+                    imageLoading ? 'opacity-0' : 'opacity-100'
+                  }`}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
                 />
                 
                 {/* Zoom Controls */}
@@ -304,18 +443,22 @@ const ProductDetails = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedImage(selectedImage > 0 ? selectedImage - 1 : product.images.length - 1);
+                        const newIndex = selectedImage > 0 ? selectedImage - 1 : product.images.length - 1;
+                        handleImageChange(newIndex);
                       }}
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all disabled:opacity-50"
+                      disabled={imageLoading}
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedImage(selectedImage < product.images.length - 1 ? selectedImage + 1 : 0);
+                        const newIndex = selectedImage < product.images.length - 1 ? selectedImage + 1 : 0;
+                        handleImageChange(newIndex);
                       }}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition-all disabled:opacity-50"
+                      disabled={imageLoading}
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -356,16 +499,23 @@ const ProductDetails = () => {
                 {product.images.map((image, index) => (
                   <button
                     key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                    onClick={() => handleImageChange(index)}
+                    disabled={imageLoading}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all relative ${
                       selectedImage === index ? 'border-rose-gold scale-105' : 'border-gray-200 hover:border-rose-gold'
-                    }`}
+                    } ${imageLoading ? 'opacity-50' : ''}`}
                   >
                     <img 
                       src={image} 
                       alt={`${product.name} ${index + 1}`} 
                       className="w-full h-full object-cover" 
                     />
+                    {/* Loading indicator for thumbnails */}
+                    {!loadedImages.has(index) && (
+                      <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-rose-gold"></div>
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>
@@ -499,9 +649,16 @@ const ProductDetails = () => {
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-                <span className="text-sm text-gray-600">
-                  {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
-                </span>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div>
+                    {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
+                  </div>
+                  {isProductInCart() && (
+                    <div className="text-green-600 font-medium">
+                      ✓ {getCurrentCartQuantity()} in your cart
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -513,7 +670,7 @@ const ProductDetails = () => {
                   disabled={product.stock_quantity === 0}
                   className="flex-1 bg-gradient-to-r from-rose-gold to-copper text-white py-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  Buy Now
+                  {isProductInCart() ? 'Buy Now (Add +1)' : 'Buy Now'}
                 </button>
                 <button
                   onClick={handleAddToCart}
@@ -521,7 +678,7 @@ const ProductDetails = () => {
                   className="flex-1 border-2 border-rose-gold text-rose-gold py-4 rounded-lg font-semibold hover:bg-rose-gold hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <ShoppingBag className="w-5 h-5" />
-                  Add to Cart
+                  {isProductInCart() ? `Add More (${getCurrentCartQuantity()} in cart)` : 'Add to Cart'}
                 </button>
               </div>
 
@@ -530,8 +687,18 @@ const ProductDetails = () => {
                 <div className="flex items-center gap-3">
                   <Truck className="w-5 h-5 text-rose-gold" />
                   <div>
-                    <p className="font-medium text-mahogany">Free Delivery</p>
-                    <p className="text-sm text-gray-600">On orders above ₹999 • {estimatedDelivery}</p>
+                    <p className="font-medium text-mahogany">
+                      {product.has_delivery_charge ? 'Delivery Charges' : 'Free Delivery'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {product.has_delivery_charge ? (
+                        <>
+                          ₹{product.delivery_charge} delivery charge • Free above ₹{product.free_delivery_threshold} • {estimatedDelivery}
+                        </>
+                      ) : (
+                        `Free delivery • ${estimatedDelivery}`
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

@@ -13,6 +13,9 @@ interface CartItem {
     price: number;
     images: string[];
     stock_quantity: number;
+    has_delivery_charge: boolean;
+    delivery_charge: number;
+    free_delivery_threshold: number;
   };
 }
 
@@ -25,6 +28,7 @@ interface CartContextType {
   clearCart: () => Promise<void>;
   getTotalPrice: () => number;
   getTotalItems: () => number;
+  getDeliveryCharges: () => number;
   checkStockAvailability: (productId: string, size: string, quantity: number) => Promise<boolean>;
 }
 
@@ -60,7 +64,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('cart_items')
         .select(`
           *,
-          product:products(id, name, price, images, stock_quantity)
+          product:products(id, name, price, images, stock_quantity, has_delivery_charge, delivery_charge, free_delivery_threshold)
         `)
         .eq('user_id', user.id);
 
@@ -207,6 +211,32 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return items.reduce((total, item) => total + item.quantity, 0);
   };
 
+  const getDeliveryCharges = () => {
+    if (items.length === 0) return 0;
+    
+    const subtotal = getTotalPrice();
+    
+    // Find the highest delivery charge among products that have delivery charges
+    let maxDeliveryCharge = 0;
+    let highestFreeDeliveryThreshold = 0;
+    
+    for (const item of items) {
+      if (item.product.has_delivery_charge) {
+        maxDeliveryCharge = Math.max(maxDeliveryCharge, item.product.delivery_charge);
+        highestFreeDeliveryThreshold = Math.max(highestFreeDeliveryThreshold, item.product.free_delivery_threshold);
+      }
+    }
+    
+    // If no products have delivery charges, return 0
+    if (maxDeliveryCharge === 0) return 0;
+    
+    // If subtotal meets the highest free delivery threshold, return 0
+    if (subtotal >= highestFreeDeliveryThreshold) return 0;
+    
+    // Otherwise return the highest delivery charge
+    return maxDeliveryCharge;
+  };
+
   const value = {
     items,
     loading,
@@ -216,6 +246,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearCart,
     getTotalPrice,
     getTotalItems,
+    getDeliveryCharges,
     checkStockAvailability,
   };
 

@@ -29,6 +29,9 @@ export type Database = {
           is_featured: boolean;
           is_new: boolean;
           is_bestseller: boolean;
+          has_delivery_charge: boolean;
+          delivery_charge: number;
+          free_delivery_threshold: number;
           created_at: string;
           updated_at: string;
         };
@@ -48,6 +51,9 @@ export type Database = {
           is_featured?: boolean;
           is_new?: boolean;
           is_bestseller?: boolean;
+          has_delivery_charge?: boolean;
+          delivery_charge?: number;
+          free_delivery_threshold?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -67,6 +73,9 @@ export type Database = {
           is_featured?: boolean;
           is_new?: boolean;
           is_bestseller?: boolean;
+          has_delivery_charge?: boolean;
+          delivery_charge?: number;
+          free_delivery_threshold?: number;
           created_at?: string;
           updated_at?: string;
         };

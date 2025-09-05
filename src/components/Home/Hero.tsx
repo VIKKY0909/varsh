@@ -1,10 +1,70 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import heroImg from "../../lib/5dec5227-cf34-4607-a33e-21c33efd7203_20250725_014719_0000.jpg";
 import { useNavigate, Link } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  original_price: number;
+  images: string[];
+  category: string;
+  material: string;
+  color: string;
+  size: string[];
+  is_new: boolean;
+  is_bestseller: boolean;
+  created_at: string;
+}
 
 const Hero = () => {
-const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [currentProductIndex, setCurrentProductIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch latest 3 featured products
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('is_featured', true)
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (error) throw error;
+        setFeaturedProducts(data || []);
+      } catch (error) {
+        console.error('Error fetching featured products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
+
+  // Auto-slide functionality
+  useEffect(() => {
+    if (featuredProducts.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentProductIndex((prevIndex) => 
+        (prevIndex + 1) % featuredProducts.length
+      );
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [featuredProducts.length]);
+
+
+  const currentProduct = featuredProducts[currentProductIndex];
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
@@ -65,21 +125,95 @@ const navigate = useNavigate();
           <div className="relative order-1 lg:order-2">
             <div className="absolute inset-0 bg-gradient-to-br from-blush-pink to-rose-gold rounded-3xl transform rotate-6 opacity-20"></div>
             <div className="relative bg-white rounded-3xl overflow-hidden shadow-2xl">
-              <img
-                src= {heroImg}
-                alt="Beautiful ethnic wear model"
-                className="w-full h-96 lg:h-[500px] object-cover"
-              />
-              <div className="absolute bottom-6 left-6 right-6 bg-white bg-opacity-95 backdrop-blur rounded-xl p-4">
-                <h3 className="font-semibold text-mahogany mb-1">Featured: IndiRatri</h3>
-                <p className="text-sm text-gray-600">Infuse elegance into your everyday wardrobe with our IndiRatri Cotton Kurti</p>
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-rose-gold font-bold">From 449</span>
-                  <button onClick={() => navigate('/products')} className="text-sm text-rose-gold hover:text-mahogany transition-colors">
-                    View Details →
-                  </button>
+              {loading ? (
+                <div className="w-full h-96 lg:h-[500px] bg-gradient-to-br from-blush-pink to-rose-gold opacity-20 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-gold mx-auto mb-4"></div>
+                    <p className="text-mahogany">Loading featured products...</p>
+                  </div>
                 </div>
+              ) : !currentProduct ? (
+                <div className="w-full h-96 lg:h-[500px] bg-gradient-to-br from-blush-pink to-rose-gold opacity-30 flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-mahogany mb-2">Featured Collection</h3>
+                    <p className="text-gray-600 text-sm">Exquisite ethnic wear crafted with love</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <img
+                    src={currentProduct.images && currentProduct.images.length > 0 
+                      ? currentProduct.images[0] 
+                      : heroImg
+                    }
+                    alt={currentProduct.name || "Beautiful ethnic wear model"}
+                    className="w-full h-96 lg:h-[500px] object-cover transition-opacity duration-500"
+                  />
+                </>
+              )}
+              
+              {/* Featured Product Info */}
+              <div className="absolute bottom-6 left-6 right-6 bg-white bg-opacity-95 backdrop-blur rounded-xl p-4 transition-all duration-500">
+                {currentProduct && !loading ? (
+                  <>
+                    <h3 className="font-semibold text-mahogany mb-1">
+                      Featured: {currentProduct.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      {currentProduct.description}
+                    </p>
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-rose-gold font-bold">₹{currentProduct.price?.toLocaleString()}</span>
+                        {currentProduct.original_price > currentProduct.price && (
+                          <span className="text-sm text-gray-500 line-through">
+                            ₹{currentProduct.original_price?.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      <button 
+                        onClick={() => navigate(`/products/${currentProduct.id}`)} 
+                        className="text-sm text-rose-gold hover:text-mahogany transition-colors"
+                      >
+                        View Details →
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="font-semibold text-mahogany mb-1">Featured: IndiRatri</h3>
+                    <p className="text-sm text-gray-600">Infuse elegance into your everyday wardrobe with our IndiRatri Cotton Kurti</p>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-rose-gold font-bold">From ₹449</span>
+                      <button onClick={() => navigate('/products')} className="text-sm text-rose-gold hover:text-mahogany transition-colors">
+                        View Details →
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
+
+              {/* Slide indicators */}
+              {featuredProducts.length > 1 && (
+                <div className="absolute top-6 right-6 flex gap-2">
+                  {featuredProducts.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentProductIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        index === currentProductIndex 
+                          ? 'bg-rose-gold w-6' 
+                          : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
