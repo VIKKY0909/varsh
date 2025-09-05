@@ -20,9 +20,9 @@ interface Product {
   stock_quantity: number;
   is_new: boolean;
   is_bestseller: boolean;
-  has_delivery_charge: boolean;
-  delivery_charge: number;
-  free_delivery_threshold: number;
+  has_delivery_charge?: boolean;
+  delivery_charge?: number;
+  free_delivery_threshold?: number;
 }
 
 const ProductDetails = () => {
@@ -53,7 +53,8 @@ const ProductDetails = () => {
     return items.some(item => item.product_id === product.id && item.size === selectedSize);
   };
 
-  // Get current quantity in cart
+  
+
   const getCurrentCartQuantity = () => {
     if (!product || !selectedSize) return 0;
     const cartItem = items.find(item => item.product_id === product.id && item.size === selectedSize);
@@ -693,7 +694,7 @@ const ProductDetails = () => {
                     <p className="text-sm text-gray-600">
                       {product.has_delivery_charge ? (
                         <>
-                          ₹{product.delivery_charge} delivery charge • Free above ₹{product.free_delivery_threshold} • {estimatedDelivery}
+                          ₹{product.delivery_charge || 0} delivery charge • Free above ₹{product.free_delivery_threshold || 999} • {estimatedDelivery}
                         </>
                       ) : (
                         `Free delivery • ${estimatedDelivery}`

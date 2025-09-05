@@ -13,9 +13,9 @@ interface CartItem {
     price: number;
     images: string[];
     stock_quantity: number;
-    has_delivery_charge: boolean;
-    delivery_charge: number;
-    free_delivery_threshold: number;
+    has_delivery_charge?: boolean;
+    delivery_charge?: number;
+    free_delivery_threshold?: number;
   };
 }
 
@@ -222,8 +222,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     for (const item of items) {
       if (item.product.has_delivery_charge) {
-        maxDeliveryCharge = Math.max(maxDeliveryCharge, item.product.delivery_charge);
-        highestFreeDeliveryThreshold = Math.max(highestFreeDeliveryThreshold, item.product.free_delivery_threshold);
+        maxDeliveryCharge = Math.max(maxDeliveryCharge, item.product.delivery_charge || 0);
+        highestFreeDeliveryThreshold = Math.max(highestFreeDeliveryThreshold, item.product.free_delivery_threshold || 999);
       }
     }
     
