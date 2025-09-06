@@ -91,13 +91,13 @@ const Hero = () => {
             </div>
             
             <h1 className="text-5xl lg:text-6xl font-bold text-mahogany leading-tight mb-6">
-              Premium
-              <span className="block text-rose-gold">Handcrafted</span>
-              <span className="block">Kurtis</span>
+              <span className="text-rose-gold">Varsh ethnic wears</span>
+              <span className="block text-mahogany">Premium</span>
+              <span className="block text-rose-gold">Handcrafted Kurtis</span>
             </h1>
             
             <h2 className="text-xl text-gray-600 mb-8 leading-relaxed max-w-lg">
-              Discover <Link to="/products" className="text-rose-gold hover:text-mahogany font-semibold">handcrafted ethnic wear</Link> that celebrates tradition while embracing contemporary style. Each piece tells a story of <Link to="/about" className="text-rose-gold hover:text-mahogany font-semibold">heritage and artistry</Link>.
+              Discover <Link to="/products" className="text-rose-gold hover:text-mahogany font-semibold">handcrafted ethnic wear at Varsh ethnic wears</Link> that celebrates tradition while embracing contemporary style. Each piece tells a story of <Link to="/about" className="text-rose-gold hover:text-mahogany font-semibold">heritage and artistry</Link>.
             </h2>
             
             <div className="flex flex-col sm:flex-row gap-4">

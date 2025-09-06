@@ -21,6 +21,9 @@ import ContactUs from './pages/ContactUs';
 import AboutUs from './pages/AboutUs';
 import TermsAndConditions from './pages/TermsAndConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import VarshEthnicWears from './pages/VarshEthnicWears';
+import EthnicWearCollection from './pages/EthnicWearCollection';
+import HandcraftedKurtis from './pages/HandcraftedKurtis';
 // import PaymentTest from './pages/PaymentTest';
 
 function App() {
@@ -45,6 +48,9 @@ function App() {
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/contact" element={<ContactUs />} />
                 <Route path="/about" element={<AboutUs />} />
+                <Route path="/varsh-ethnic-wears" element={<VarshEthnicWears />} />
+                <Route path="/ethnic-wear-collection" element={<EthnicWearCollection />} />
+                <Route path="/handcrafted-kurtis" element={<HandcraftedKurtis />} />
                 <Route path="/terms" element={<TermsAndConditions />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 {/* <Route path="/payment-test" element={<PaymentTest />} /> */}
@@ -58,7 +64,7 @@ function App() {
                 />
               </Routes>
             </main>
-            
+
             <Footer />
           </div>
         </Router>

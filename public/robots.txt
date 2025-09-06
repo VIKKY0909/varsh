@@ -1,6 +1,14 @@
-# Robots.txt for Varsh Ethnic Wears
+# Robots.txt for Varsh ethnic wears
 User-agent: *
 Allow: /
+
+# Brand-specific pages for better ranking
+Allow: /varsh-ethnic-wears
+Allow: /ethnic-wear-collection
+Allow: /handcrafted-kurtis
+Allow: /traditional-indian-clothing
+
+# Disallow private areas
 Disallow: /admin
 Disallow: /api/
 Disallow: /checkout
