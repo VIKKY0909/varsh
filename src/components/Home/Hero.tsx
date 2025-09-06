@@ -24,6 +24,7 @@ const Hero = () => {
   const navigate = useNavigate();
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
+
   const [loading, setLoading] = useState(true);
 
   // Fetch latest 3 featured products
@@ -31,6 +32,7 @@ const Hero = () => {
     const fetchFeaturedProducts = async () => {
       try {
         setLoading(true);
+        console.log('Fetching featured products...');
         const { data, error } = await supabase
           .from('products')
           .select('*')
@@ -38,7 +40,12 @@ const Hero = () => {
           .order('created_at', { ascending: false })
           .limit(3);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+        
+        console.log('Featured products fetched:', data);
         setFeaturedProducts(data || []);
       } catch (error) {
         console.error('Error fetching featured products:', error);
@@ -94,7 +101,13 @@ const Hero = () => {
             </h2>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <button onClick={() => navigate('/products')} className="bg-rose-gold text-white px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group">
+              <button 
+                onClick={() => {
+                  console.log('Explore Collection clicked - navigating to products page');
+                  navigate('/products');
+                }} 
+                className="bg-rose-gold text-white px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group"
+              >
                 Explore Collection
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -177,7 +190,10 @@ const Hero = () => {
                         )}
                       </div>
                       <button 
-                        onClick={() => navigate(`/products/${currentProduct.id}`)} 
+                        onClick={() => {
+                          console.log('View Details clicked for product:', currentProduct.id);
+                          navigate(`/product/${currentProduct.id}`);
+                        }} 
                         className="text-sm text-rose-gold hover:text-mahogany transition-colors"
                       >
                         View Details →
@@ -190,7 +206,13 @@ const Hero = () => {
                     <p className="text-sm text-gray-600">Infuse elegance into your everyday wardrobe with our IndiRatri Cotton Kurti</p>
                     <div className="flex items-center justify-between mt-3">
                       <span className="text-rose-gold font-bold">From ₹449</span>
-                      <button onClick={() => navigate('/products')} className="text-sm text-rose-gold hover:text-mahogany transition-colors">
+                      <button 
+                        onClick={() => {
+                          console.log('View Details clicked - navigating to products page');
+                          navigate('/products');
+                        }} 
+                        className="text-sm text-rose-gold hover:text-mahogany transition-colors"
+                      >
                         View Details →
                       </button>
                     </div>

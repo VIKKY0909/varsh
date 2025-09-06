@@ -202,19 +202,13 @@ const PrivacyPolicy = () => {
             <h2 className="text-2xl font-bold text-mahogany mb-4">13. Contact Us</h2>
             <div className="bg-gray-50 p-4 rounded-lg mb-6">
               <p className="mb-2">If you have any questions about this Privacy Policy, please contact us:</p>
-              <p className="mb-2"><strong>Email:</strong> privacy@varsh.com</p>
-              <p className="mb-2"><strong>Phone:</strong> +91-9876543210</p>
-              <p className="mb-2"><strong>Address:</strong> Varsh Ethnic Wears, Mumbai, Maharashtra, India</p>
+              <p className="mb-2"><strong>Email:</strong> varshethnicwears@gmail.com</p>
+              <p className="mb-2"><strong>Phone:</strong> +91 8511822796</p>
+              <p className="mb-2"><strong>Address:</strong> Varsh Ethnic Wears, Ahmedabad, Gujarat, India</p>
             </div>
 
             {/* Data Protection Officer */}
-            <div className="mt-8 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <h3 className="font-semibold text-yellow-800 mb-2">Data Protection Officer</h3>
-              <p className="text-yellow-700">
-                For privacy-related concerns or to exercise your data rights, you can contact our Data Protection 
-                Officer at dpo@varsh.com. We will respond to your request within 30 days.
-              </p>
-            </div>
+            
           </div>
         </div>
       </div>

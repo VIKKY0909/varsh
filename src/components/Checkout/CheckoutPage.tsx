@@ -274,7 +274,7 @@ const CheckoutPage = () => {
       console.log('Order created successfully:', order);
 
       // Create order items
-      const orderItems = orderData.order_items.map(item => ({
+      const orderItems = orderData.order_items.map((item: any) => ({
         order_id: order.id,
         product_id: item.product_id,
         quantity: item.quantity,
