@@ -4,6 +4,7 @@ import { Search, Filter, Heart, ShoppingBag, Star, Grid, List, Eye, X, ChevronDo
 import { supabase } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import SEO from '../components/SEO';
 
 interface Product {
   id: string;
@@ -63,7 +64,7 @@ const Products = () => {
   const [processingCart, setProcessingCart] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
-  
+
   const { addToCart } = useCart();
   const { user } = useAuth();
 
@@ -94,7 +95,7 @@ const Products = () => {
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
-    
+
     const timeout = setTimeout(() => {
       const params = new URLSearchParams(searchParams);
       if (term) {
@@ -105,7 +106,7 @@ const Products = () => {
       setSearchParams(params);
       setPagination(prev => ({ ...prev, page: 1 }));
     }, 300);
-    
+
     setSearchTimeout(timeout);
   }, [searchParams, setSearchParams, searchTimeout]);
 
@@ -166,7 +167,7 @@ const Products = () => {
           break;
         case 'popularity':
           query = query.order('is_bestseller', { ascending: false })
-                      .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false });
           break;
         default:
           query = query.order('name', { ascending: true });
@@ -177,11 +178,11 @@ const Products = () => {
       query = query.range(startIndex, startIndex + pagination.limit - 1);
 
       const { data, error, count } = await query;
-      
+
       if (error) throw error;
 
       const newProducts = data || [];
-      
+
       if (reset) {
         setProducts(newProducts);
         setPagination(prev => ({
@@ -219,7 +220,7 @@ const Products = () => {
         .eq('user_id', user.id);
 
       if (error) throw error;
-      
+
       const wishlistProductIds = new Set(data?.map(item => item.product_id) || []);
       setWishlistItems(wishlistProductIds);
     } catch (error) {
@@ -237,10 +238,10 @@ const Products = () => {
     if (processingCart.has(productId)) return;
 
     setProcessingCart(prev => new Set([...prev, productId]));
-    
+
     try {
       await addToCart(productId, sizes[0]);
-      
+
     } catch (error) {
       setError('Failed to add item to cart. Please try again.');
     } finally {
@@ -258,7 +259,7 @@ const Products = () => {
   const handleWishlistToggle = useCallback(async (productId: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    
+
     if (!user) {
       setShowAuthModal(true);
       return;
@@ -270,16 +271,16 @@ const Products = () => {
 
     try {
       const isInWishlist = wishlistItems.has(productId);
-      
+
       if (isInWishlist) {
         const { error } = await supabase
           .from('wishlist')
           .delete()
           .eq('user_id', user.id)
           .eq('product_id', productId);
-        
+
         if (error) throw error;
-        
+
         setWishlistItems(prev => {
           const newSet = new Set(prev);
           newSet.delete(productId);
@@ -292,9 +293,9 @@ const Products = () => {
             user_id: user.id,
             product_id: productId
           });
-        
+
         if (error) throw error;
-        
+
         setWishlistItems(prev => new Set([...prev, productId]));
       }
     } catch (error) {
@@ -315,13 +316,13 @@ const Products = () => {
 
   const applyFilters = useCallback(() => {
     const params = new URLSearchParams();
-    
+
     if (filters.category) params.set('category', filters.category);
     if (filters.material) params.set('material', filters.material);
     if (filters.color) params.set('color', filters.color);
     if (searchTerm) params.set('search', searchTerm);
     if (sortBy !== 'name') params.set('sort', sortBy);
-    
+
     setSearchParams(params);
     setPagination(prev => ({ ...prev, page: 1 }));
     setShowFilters(false);
@@ -410,6 +411,12 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO
+        title="Buy Handcrafted Kurtis & Ethnic Wear Online | Varsh Ethnic Wears"
+        description="Shop our exclusive collection of handcrafted kurtis, ethnic wear, and traditional Indian clothing. Find the perfect outfit for every occasion, from casual daily wear to festive celebrations."
+        keywords="buy kurti online, handcrafted kurtis, ethnic wear, indian clothing, women's fashion, casual kurtis, festive wear, party wear, short kurtis, daily wear, everyday wear, solid colour"
+        canonicalUrl="https://varshethnicwears.com/products"
+      />
       {/* Error Message */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 mx-4">
@@ -445,9 +452,10 @@ const Products = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-mahogany">
-                Our Kurti Collection
+                Buy Handcrafted Kurtis & Ethnic Wear Online
               </h1>
               <p className="text-gray-600 mt-1">
+                Explore our wide range of <strong>short kurtis</strong>, <strong>daily wear</strong> options, and <strong>everyday wear</strong> essentials. Find your perfect <strong>solid colour</strong> match.
                 {pagination.total} products found
                 {searchTerm && ` for "${searchTerm}"`}
                 {filters.category && ` in ${filters.category}`}
@@ -643,28 +651,25 @@ const Products = () => {
               </div>
             ) : (
               <>
-                                 <div className={`grid gap-3 sm:gap-4 md:gap-6 ${
-                   viewMode === 'grid' 
-                     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4' 
-                     : 'grid-cols-1'
-                 }`}>
+                <div className={`grid gap-3 sm:gap-4 md:gap-6 ${viewMode === 'grid'
+                    ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4'
+                    : 'grid-cols-1'
+                  }`}>
                   {products.map((product) => (
                     <div
                       key={product.id}
-                      className={`group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 ${
-                        viewMode === 'list' ? 'flex' : ''
-                      }`}
+                      className={`group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 ${viewMode === 'list' ? 'flex' : ''
+                        }`}
                     >
                       <div className={`relative overflow-hidden ${viewMode === 'list' ? 'w-32 sm:w-48 flex-shrink-0' : 'aspect-[3/4]'}`}>
                         <img
                           src={product.images[0]}
                           alt={product.name}
-                          className={`object-cover group-hover:scale-105 transition-transform duration-500 ${
-                            viewMode === 'list' ? 'w-full h-full' : 'w-full h-full'
-                          }`}
+                          className={`object-cover group-hover:scale-105 transition-transform duration-500 ${viewMode === 'list' ? 'w-full h-full' : 'w-full h-full'
+                            }`}
                           loading="lazy"
                         />
-                        
+
                         {/* Badges */}
                         <div className="absolute top-4 left-4 flex flex-col gap-2">
                           {product.is_new && (
@@ -686,18 +691,17 @@ const Products = () => {
 
                         {/* Action Buttons */}
                         <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                          <button 
+                          <button
                             onClick={(e) => handleWishlistToggle(product.id, e)}
                             disabled={processingWishlist.has(product.id)}
-                            className={`p-2 rounded-full transition-all duration-300 ${
-                              wishlistItems.has(product.id)
+                            className={`p-2 rounded-full transition-all duration-300 ${wishlistItems.has(product.id)
                                 ? 'bg-rose-gold text-white'
                                 : 'bg-white bg-opacity-90 backdrop-blur hover:bg-rose-gold hover:text-white'
-                            } ${processingWishlist.has(product.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              } ${processingWishlist.has(product.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <Heart className={`w-4 h-4 ${wishlistItems.has(product.id) ? 'fill-current' : ''}`} />
                           </button>
-                          <button 
+                          <button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
@@ -726,17 +730,17 @@ const Products = () => {
                         <Link to={`/product/${product.id}`} className="block">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm text-rose-gold font-medium capitalize">{product.category}</span>
-{/*                           <div className="flex items-center">
+                            {/*                           <div className="flex items-center">
                             <Star className="w-4 h-4 text-yellow-400 fill-current" />
                             <span className="text-sm text-gray-500 ml-1">{product.rating || 4.8}</span>
                           </div> */}
                           </div>
-                          
+
                           <h3 className="text-base sm:text-lg font-bold text-mahogany mb-2 group-hover:text-rose-gold transition-colors line-clamp-2">
                             {product.name}
                           </h3>
                         </Link>
-                        
+
                         {viewMode === 'list' && (
                           <Link to={`/product/${product.id}`} className="block">
                             <p className="text-gray-600 text-sm mb-4 line-clamp-2 hover:text-gray-800 transition-colors">
@@ -744,7 +748,7 @@ const Products = () => {
                             </p>
                           </Link>
                         )}
-                        
+
                         <Link to={`/product/${product.id}`} className="block mb-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -768,13 +772,13 @@ const Products = () => {
                           >
                             View Details
                           </Link>
-                          <button 
+                          <button
                             onClick={() => handleAddToCart(product.id, product.size)}
                             disabled={product.stock_quantity === 0 || processingCart.has(product.id)}
                             className="flex-1 bg-rose-gold text-white py-2 px-3 sm:px-4 rounded-lg font-semibold hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                           >
-                            {processingCart.has(product.id) ? 'Adding...' : 
-                             product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+                            {processingCart.has(product.id) ? 'Adding...' :
+                              product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
                           </button>
                         </div>
 

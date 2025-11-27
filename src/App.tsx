@@ -24,13 +24,14 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import VarshEthnicWears from './pages/VarshEthnicWears';
 import EthnicWearCollection from './pages/EthnicWearCollection';
 import HandcraftedKurtis from './pages/HandcraftedKurtis';
-// import PaymentTest from './pages/PaymentTest';
+import RouteTracker from './components/RouteTracker';
 
 function App() {
   return (
     <AuthProvider>
       <CartProvider>
         <Router>
+          <RouteTracker />
           <div className="min-h-screen bg-white flex flex-col">
             <ScrollToTop />
             <Header />
@@ -53,14 +54,13 @@ function App() {
                 <Route path="/handcrafted-kurtis" element={<HandcraftedKurtis />} />
                 <Route path="/terms" element={<TermsAndConditions />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
-                {/* <Route path="/payment-test" element={<PaymentTest />} /> */}
-                <Route 
-                  path="/admin" 
+                <Route
+                  path="/admin"
                   element={
                     <AdminRoute>
                       <AdminDashboard />
                     </AdminRoute>
-                  } 
+                  }
                 />
               </Routes>
             </main>

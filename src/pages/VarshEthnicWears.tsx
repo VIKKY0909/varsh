@@ -1,10 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Star, Heart, ShoppingBag, Truck, Shield, Award } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const VarshEthnicWears = () => {
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Varsh Ethnic Wears | Premium Handcrafted Kurtis & Traditional Indian Clothing"
+        description="Discover Varsh Ethnic Wears - your destination for authentic handcrafted kurtis, sarees, and traditional Indian clothing designed for every skin tone. Shop premium ethnic wear online."
+        keywords="varsh ethnic wears, handcrafted kurtis, traditional indian clothing, ethnic wear online, buy kurti, sarees, women's ethnic fashion"
+        canonicalUrl="https://varshethnicwears.com/varsh-ethnic-wears"
+      />
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-blush-pink to-rose-gold py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,15 +23,15 @@ const VarshEthnicWears = () => {
               Your premier destination for authentic handcrafted ethnic wear and traditional Indian clothing
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
-                to="/products" 
+              <Link
+                to="/products"
                 className="bg-white text-rose-gold px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group"
               >
                 Shop Now
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link 
-                to="/about" 
+              <Link
+                to="/about"
                 className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-rose-gold transition-all duration-300"
               >
                 Our Story
@@ -100,7 +107,7 @@ const VarshEthnicWears = () => {
               We are committed to providing you with the finest ethnic wear that combines traditional craftsmanship with contemporary style.
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-6">
               <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
@@ -111,7 +118,7 @@ const VarshEthnicWears = () => {
                 Every piece at Varsh ethnic wears is carefully selected for its superior quality and authentic craftsmanship.
               </p>
             </div>
-            
+
             <div className="text-center p-6">
               <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="w-8 h-8 text-white" />
@@ -121,7 +128,7 @@ const VarshEthnicWears = () => {
                 Our ethnic wear is designed to flatter every skin tone and body type, celebrating diversity and beauty.
               </p>
             </div>
-            
+
             <div className="text-center p-6">
               <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <ShoppingBag className="w-8 h-8 text-white" />
@@ -144,8 +151,8 @@ const VarshEthnicWears = () => {
           <p className="text-xl text-white mb-8">
             Explore our collection of handcrafted ethnic wear and find your perfect style today.
           </p>
-          <Link 
-            to="/products" 
+          <Link
+            to="/products"
             className="bg-white text-rose-gold px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 inline-flex items-center group"
           >
             Shop Collection

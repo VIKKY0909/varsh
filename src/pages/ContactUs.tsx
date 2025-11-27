@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -51,8 +52,57 @@ const ContactUs = () => {
     }
   };
 
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "ClothingStore",
+    "name": "Varsh Ethnic Wears",
+    "image": "https://varshethnicwears.com/logo.png",
+    "telephone": "+91 8511822796",
+    "email": "varshethnicwears@gmail.com",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "IN"
+    },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday"
+        ],
+        "opens": "09:00",
+        "closes": "20:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": "Saturday",
+        "opens": "10:00",
+        "closes": "18:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": "Sunday",
+        "opens": "11:00",
+        "closes": "17:00"
+      }
+    ],
+    "url": "https://varshethnicwears.com/contact"
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO
+        title="Contact Us | Varsh Ethnic Wears Customer Support"
+        description="Get in touch with Varsh Ethnic Wears. Contact us for queries about our handcrafted kurtis, shipping, or returns. Email: varshethnicwears@gmail.com, Phone: +91 8511822796."
+        keywords="contact varsh ethnic wears, customer support, ethnic wear queries, buy kurti online help, indian ethnic wear contact"
+        canonicalUrl="https://varshethnicwears.com/contact"
+      />
+      <script type="application/ld+json">
+        {JSON.stringify(localBusinessSchema)}
+      </script>
       {/* Header */}
       <div className="bg-gradient-to-r from-rose-gold to-copper text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -70,7 +120,7 @@ const ContactUs = () => {
             <div>
               <h2 className="text-3xl font-bold text-mahogany mb-6">Get in Touch</h2>
               <p className="text-gray-600 text-lg leading-relaxed">
-                Have questions about our ethnic wear collection? Need help with your order? 
+                Have questions about our ethnic wear collection? Need help with your order?
                 We're here to help you with everything you need.
               </p>
             </div>
@@ -86,7 +136,7 @@ const ContactUs = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-mahogany mb-1">Email Us</h3>
                   <p className="text-gray-600">varshethnicwears@gmail.com</p>
-                 
+
                 </div>
               </div>
 
@@ -99,11 +149,11 @@ const ContactUs = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-mahogany mb-1">Call Us</h3>
                   <p className="text-gray-600">+91 8511822796</p>
-                  
+
                 </div>
               </div>
 
-              
+
 
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
@@ -149,7 +199,7 @@ const ContactUs = () => {
           {/* Contact Form */}
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <h2 className="text-2xl font-bold text-mahogany mb-6">Send us a Message</h2>
-            
+
             {submitStatus === 'success' && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
                 <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
@@ -269,7 +319,7 @@ const ContactUs = () => {
               </p>
             </div>
 
-            
+
 
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-mahogany mb-3">Do you offer custom sizing?</h3>
@@ -278,7 +328,7 @@ const ContactUs = () => {
               </p>
             </div>
 
-            
+
           </div>
         </div>
       </div>

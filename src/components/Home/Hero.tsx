@@ -44,7 +44,7 @@ const Hero = () => {
           console.error('Supabase error:', error);
           throw error;
         }
-        
+
         console.log('Featured products fetched:', data);
         setFeaturedProducts(data || []);
       } catch (error) {
@@ -62,7 +62,7 @@ const Hero = () => {
     if (featuredProducts.length <= 1) return;
 
     const interval = setInterval(() => {
-      setCurrentProductIndex((prevIndex) => 
+      setCurrentProductIndex((prevIndex) =>
         (prevIndex + 1) % featuredProducts.length
       );
     }, 5000); // Change slide every 5 seconds
@@ -89,36 +89,36 @@ const Hero = () => {
             <div className="inline-block bg-gradient-to-r from-blush-pink to-rose-gold text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
               ✨ New Collection Arrived
             </div>
-            
+
             <h1 className="text-5xl lg:text-6xl font-bold text-mahogany leading-tight mb-6">
               <span className="text-rose-gold">Varsh ethnic wears</span>
               <span className="block text-mahogany">Premium</span>
               <span className="block text-rose-gold">Handcrafted Kurtis</span>
             </h1>
-            
+
             <h2 className="text-xl text-gray-600 mb-8 leading-relaxed max-w-lg">
-              Discover <Link to="/products" className="text-rose-gold hover:text-mahogany font-semibold">handcrafted ethnic wear at Varsh ethnic wears</Link> that celebrates tradition while embracing contemporary style. Each piece tells a story of <Link to="/about" className="text-rose-gold hover:text-mahogany font-semibold">heritage and artistry</Link>.
+              Discover our <strong>wide range</strong> of <Link to="/products" className="text-rose-gold hover:text-mahogany font-semibold">Indian ethnic wear</Link> at Varsh ethnic wears. <strong>Buy kurti</strong> styles that celebrate tradition while embracing contemporary style. From the <strong>latest kurti</strong> designs to timeless classics, each piece tells a story of <Link to="/about" className="text-rose-gold hover:text-mahogany font-semibold">heritage and artistry</Link>.
             </h2>
-            
+
             <div className="flex flex-col sm:flex-row gap-4">
-              <button 
+              <button
                 onClick={() => {
                   console.log('Explore Collection clicked - navigating to products page');
                   navigate('/products');
-                }} 
+                }}
                 className="bg-rose-gold text-white px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group"
               >
                 Explore Collection
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              
+
               <button onClick={() => navigate('/about')} className="border-2 border-rose-gold text-rose-gold px-8 py-4 rounded-lg font-semibold hover:bg-rose-gold hover:text-white transition-all duration-300">
                 Watch Our Story
               </button>
             </div>
-            
+
             {/* Stats */}
-{/*             <div className="flex gap-8 mt-12">
+            {/*             <div className="flex gap-8 mt-12">
               <div>
                 <div className="text-3xl font-bold text-mahogany">10k+</div>
                 <div className="text-sm text-gray-500">Happy Customers</div>
@@ -160,8 +160,8 @@ const Hero = () => {
               ) : (
                 <>
                   <img
-                    src={currentProduct.images && currentProduct.images.length > 0 
-                      ? currentProduct.images[0] 
+                    src={currentProduct.images && currentProduct.images.length > 0
+                      ? currentProduct.images[0]
                       : heroImg
                     }
                     alt={currentProduct.name || "Beautiful ethnic wear model"}
@@ -169,7 +169,7 @@ const Hero = () => {
                   />
                 </>
               )}
-              
+
               {/* Featured Product Info */}
               <div className="absolute bottom-6 left-6 right-6 bg-white bg-opacity-95 backdrop-blur rounded-xl p-4 transition-all duration-500">
                 {currentProduct && !loading ? (
@@ -189,11 +189,11 @@ const Hero = () => {
                           </span>
                         )}
                       </div>
-                      <button 
+                      <button
                         onClick={() => {
                           console.log('View Details clicked for product:', currentProduct.id);
                           navigate(`/product/${currentProduct.id}`);
-                        }} 
+                        }}
                         className="text-sm text-rose-gold hover:text-mahogany transition-colors"
                       >
                         View Details →
@@ -206,11 +206,11 @@ const Hero = () => {
                     <p className="text-sm text-gray-600">Infuse elegance into your everyday wardrobe with our IndiRatri Cotton Kurti</p>
                     <div className="flex items-center justify-between mt-3">
                       <span className="text-rose-gold font-bold">From ₹449</span>
-                      <button 
+                      <button
                         onClick={() => {
                           console.log('View Details clicked - navigating to products page');
                           navigate('/products');
-                        }} 
+                        }}
                         className="text-sm text-rose-gold hover:text-mahogany transition-colors"
                       >
                         View Details →
@@ -227,11 +227,10 @@ const Hero = () => {
                     <button
                       key={index}
                       onClick={() => setCurrentProductIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                        index === currentProductIndex 
-                          ? 'bg-rose-gold w-6' 
-                          : 'bg-white bg-opacity-50 hover:bg-opacity-75'
-                      }`}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentProductIndex
+                        ? 'bg-rose-gold w-6'
+                        : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                        }`}
                     />
                   ))}
                 </div>

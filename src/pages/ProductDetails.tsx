@@ -4,6 +4,7 @@ import { Heart, ShoppingBag, Share2, Truck, Shield, ChevronLeft, ChevronRight, P
 import { supabase } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import SEO from '../components/SEO';
 
 interface Product {
   id: string;
@@ -36,14 +37,14 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  
+
   // Image gallery states
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showImageModal, setShowImageModal] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
   const [imageLoading, setImageLoading] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
-  
+
   const { addToCart, items, checkStockAvailability } = useCart();
   const { user } = useAuth();
 
@@ -53,7 +54,7 @@ const ProductDetails = () => {
     return items.some(item => item.product_id === product.id && item.size === selectedSize);
   };
 
-  
+
 
   const getCurrentCartQuantity = () => {
     if (!product || !selectedSize) return 0;
@@ -77,7 +78,7 @@ const ProductDetails = () => {
 
   const preloadImages = () => {
     if (!product) return;
-    
+
     product.images.forEach((imageUrl, index) => {
       const img = new Image();
       img.onload = () => {
@@ -99,13 +100,13 @@ const ProductDetails = () => {
         .single();
 
       if (error) throw error;
-      
+
       setProduct(data);
       setSelectedSize(data.size[0] || '');
       setSelectedImage(0);
       setImageLoading(false);
       setLoadedImages(new Set());
-      
+
       // Fetch related products
       const { data: related } = await supabase
         .from('products')
@@ -113,7 +114,7 @@ const ProductDetails = () => {
         .eq('category', data.category)
         .neq('id', id)
         .limit(4);
-      
+
       setRelatedProducts(related || []);
     } catch (error) {
       // Handle error silently
@@ -162,10 +163,10 @@ const ProductDetails = () => {
         // Product is already in cart, check if we can add more
         const currentQuantity = existingCartItem.quantity;
         const newQuantity = currentQuantity + quantity;
-        
+
         // Check if we have enough stock for the new quantity
         const isAvailable = await checkStockAvailability(product.id, selectedSize, newQuantity);
-        
+
         if (isAvailable) {
           await addToCart(product.id, selectedSize, quantity);
           await fetchProduct();
@@ -206,10 +207,10 @@ const ProductDetails = () => {
         // Product is already in cart, check if we can add one more
         const currentQuantity = existingCartItem.quantity;
         const newQuantity = currentQuantity + quantity;
-        
+
         // Check if we have enough stock for the new quantity
         const isAvailable = await checkStockAvailability(product.id, selectedSize, newQuantity);
-        
+
         if (isAvailable) {
           // Add one more to cart
           await addToCart(product.id, selectedSize, quantity);
@@ -221,7 +222,7 @@ const ProductDetails = () => {
         await addToCart(product.id, selectedSize, quantity);
         await fetchProduct();
       }
-      
+
       // Navigate to checkout
       navigate('/checkout');
     } catch (error) {
@@ -308,10 +309,10 @@ const ProductDetails = () => {
 
   const handleImageChange = (newIndex: number) => {
     if (newIndex === selectedImage) return;
-    
+
     setImageLoading(true);
     setSelectedImage(newIndex);
-    
+
     // If image is already loaded, stop loading immediately
     if (loadedImages.has(newIndex)) {
       setImageLoading(false);
@@ -369,8 +370,75 @@ const ProductDetails = () => {
   const discountPercentage = Math.round(((product.original_price - product.price) / product.original_price) * 100);
   const estimatedDelivery = 'Expected delivery: 13-14 days';
 
+  // Structured Data for Product
+  const productSchema = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": product.name,
+    "image": product.images,
+    "description": product.description,
+    "brand": {
+      "@type": "Brand",
+      "name": "Varsh Ethnic Wears"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": window.location.href,
+      "priceCurrency": "INR",
+      "price": product.price,
+      "availability": product.stock_quantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "itemCondition": "https://schema.org/NewCondition"
+    }
+  };
+
+  // Breadcrumb Schema for SEO
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://varshethnicwears.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Products",
+        "item": "https://varshethnicwears.com/products"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": product.category.charAt(0).toUpperCase() + product.category.slice(1),
+        "item": `https://varshethnicwears.com/products?category=${product.category}`
+      },
+      {
+        "@type": "ListItem",
+        "position": 4,
+        "name": product.name,
+        "item": `https://varshethnicwears.com/product/${product.id}`
+      }
+    ]
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO
+        title={`${product.name} | Buy Online at Varsh Ethnic Wears`}
+        description={`${product.description.substring(0, 150)}... Buy ${product.name} online. Material: ${product.material}, Color: ${product.color}. Free shipping available.`}
+        keywords={`${product.name}, buy kurti online, ${product.category}, ${product.material} kurti, ${product.color} kurti, ethnic wear`}
+        canonicalUrl={`https://varshethnicwears.com/product/${product.id}`}
+        ogImage={product.images[0]}
+        ogType="product"
+      />
+      <script type="application/ld+json">
+        {JSON.stringify(productSchema)}
+      </script>
+      <script type="application/ld+json">
+        {JSON.stringify(breadcrumbSchema)}
+      </script>
       {/* Breadcrumbs */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -392,7 +460,7 @@ const ProductDetails = () => {
           <div className="space-y-6">
             {/* Main Image with Zoom */}
             <div className="relative bg-white rounded-2xl overflow-hidden shadow-lg">
-              <div 
+              <div
                 className="relative overflow-hidden cursor-zoom-in"
                 onClick={() => openImageModal(selectedImage)}
               >
@@ -405,17 +473,16 @@ const ProductDetails = () => {
                     </div>
                   </div>
                 )}
-                
+
                 <img
                   src={product.images[selectedImage]}
                   alt={product.name}
-                  className={`w-full h-96 lg:h-[500px] object-cover transition-all duration-300 hover:scale-105 ${
-                    imageLoading ? 'opacity-0' : 'opacity-100'
-                  }`}
+                  className={`w-full h-96 lg:h-[500px] object-cover transition-all duration-300 hover:scale-105 ${imageLoading ? 'opacity-0' : 'opacity-100'
+                    }`}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                 />
-                
+
                 {/* Zoom Controls */}
                 <div className="absolute top-4 right-4 flex gap-2">
                   <button
@@ -502,14 +569,13 @@ const ProductDetails = () => {
                     key={index}
                     onClick={() => handleImageChange(index)}
                     disabled={imageLoading}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all relative ${
-                      selectedImage === index ? 'border-rose-gold scale-105' : 'border-gray-200 hover:border-rose-gold'
-                    } ${imageLoading ? 'opacity-50' : ''}`}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all relative ${selectedImage === index ? 'border-rose-gold scale-105' : 'border-gray-200 hover:border-rose-gold'
+                      } ${imageLoading ? 'opacity-50' : ''}`}
                   >
-                    <img 
-                      src={image} 
-                      alt={`${product.name} ${index + 1}`} 
-                      className="w-full h-full object-cover" 
+                    <img
+                      src={image}
+                      alt={`${product.name} ${index + 1}`}
+                      className="w-full h-full object-cover"
                     />
                     {/* Loading indicator for thumbnails */}
                     {!loadedImages.has(index) && (
@@ -546,9 +612,8 @@ const ProductDetails = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleWishlistToggle}
-                    className={`p-2 rounded-full transition-colors ${
-                      isInWishlist ? 'bg-rose-gold text-white' : 'bg-gray-100 text-gray-600 hover:bg-rose-50'
-                    }`}
+                    className={`p-2 rounded-full transition-colors ${isInWishlist ? 'bg-rose-gold text-white' : 'bg-gray-100 text-gray-600 hover:bg-rose-50'
+                      }`}
                   >
                     <Heart className={`w-5 h-5 ${isInWishlist ? 'fill-current' : ''}`} />
                   </button>
@@ -560,10 +625,10 @@ const ProductDetails = () => {
                   </button>
                 </div>
               </div>
-              
+
               <h1 className="text-3xl font-bold text-mahogany mb-4">{product.name}</h1>
-              
-{/*               <div className="flex items-center gap-2 mb-4">
+
+              {/*               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
@@ -619,11 +684,10 @@ const ProductDetails = () => {
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`px-4 py-2 border rounded-lg font-medium transition-colors ${
-                      selectedSize === size
-                        ? 'border-rose-gold bg-rose-gold text-white'
-                        : 'border-gray-300 text-gray-700 hover:border-rose-gold'
-                    }`}
+                    className={`px-4 py-2 border rounded-lg font-medium transition-colors ${selectedSize === size
+                      ? 'border-rose-gold bg-rose-gold text-white'
+                      : 'border-gray-300 text-gray-700 hover:border-rose-gold'
+                      }`}
                   >
                     {size}
                   </button>
@@ -791,7 +855,7 @@ const ProductDetails = () => {
             >
               <X className="w-8 h-8" />
             </button>
-            
+
             <div className="relative">
               <img
                 src={product.images[modalImageIndex]}
@@ -799,7 +863,7 @@ const ProductDetails = () => {
                 className="max-w-full max-h-[80vh] object-contain"
                 style={{ transform: `scale(${zoomLevel})` }}
               />
-              
+
               {/* Zoom Controls */}
               <div className="absolute top-4 left-4 flex gap-2">
                 <button
@@ -849,9 +913,8 @@ const ProductDetails = () => {
                   <button
                     key={index}
                     onClick={() => setModalImageIndex(index)}
-                    className={`w-16 h-16 rounded border-2 transition-all ${
-                      modalImageIndex === index ? 'border-rose-gold' : 'border-gray-300'
-                    }`}
+                    className={`w-16 h-16 rounded border-2 transition-all ${modalImageIndex === index ? 'border-rose-gold' : 'border-gray-300'
+                      }`}
                   >
                     <img
                       src={image}

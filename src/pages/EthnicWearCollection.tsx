@@ -1,22 +1,29 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Star, Heart, ShoppingBag } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const EthnicWearCollection = () => {
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Ethnic Wear Collection | Indo Western & Traditional Styles"
+        description="Discover our exclusive ethnic wear collection featuring traditional and indo western styles. Shop authentic Indian ethnic wear, handcrafted kurtis, and more at Varsh Ethnic Wears."
+        keywords="ethnic wear collection, indo western, traditional styles, indian ethnic wear, handcrafted kurtis, types of kurtis, style kurti, festive wear, party wear"
+        canonicalUrl="https://varshethnicwears.com/ethnic-wear-collection"
+      />
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-rose-gold to-blush-pink py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center text-white">
             <h1 className="text-5xl lg:text-7xl font-bold mb-6">
-              Ethnic Wear Collection
+              Ethnic Wear Collection - Indo Western & Traditional Styles
             </h1>
             <p className="text-xl lg:text-2xl mb-8 max-w-3xl mx-auto">
-              Discover our curated collection of authentic ethnic wear at Varsh ethnic wears
+              Discover our curated collection of authentic ethnic wear at Varsh ethnic wears. From <strong>indo western</strong> fusion to classic traditions.
             </p>
-            <Link 
-              to="/products" 
+            <Link
+              to="/products"
               className="bg-white text-rose-gold px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 inline-flex items-center group"
             >
               Explore Collection
@@ -34,10 +41,10 @@ const EthnicWearCollection = () => {
               Our Ethnic Wear Categories
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From casual daily wear to festive celebrations, find the perfect ethnic wear for every occasion at Varsh ethnic wears.
+              From casual daily wear to festive celebrations, find the perfect ethnic wear for every occasion at Varsh ethnic wears. Explore various <strong>types of kurtis</strong> and find your unique <strong>style kurti</strong>.
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Link to="/products?category=casual" className="group">
               <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
@@ -50,7 +57,7 @@ const EthnicWearCollection = () => {
                 </p>
               </div>
             </Link>
-            
+
             <Link to="/products?category=formal" className="group">
               <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
                 <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
@@ -62,7 +69,7 @@ const EthnicWearCollection = () => {
                 </p>
               </div>
             </Link>
-            
+
             <Link to="/products?category=party" className="group">
               <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
                 <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
@@ -74,7 +81,7 @@ const EthnicWearCollection = () => {
                 </p>
               </div>
             </Link>
-            
+
             <Link to="/products?category=festive" className="group">
               <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
                 <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
@@ -101,7 +108,7 @@ const EthnicWearCollection = () => {
               We are committed to providing you with the finest ethnic wear that celebrates tradition while embracing contemporary style.
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-6">
               <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
@@ -112,7 +119,7 @@ const EthnicWearCollection = () => {
                 Every piece in our ethnic wear collection is handcrafted by skilled artisans using traditional techniques.
               </p>
             </div>
-            
+
             <div className="text-center p-6">
               <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="w-8 h-8 text-white" />
@@ -122,7 +129,7 @@ const EthnicWearCollection = () => {
                 Our ethnic wear collection is designed to flatter every body type and skin tone.
               </p>
             </div>
-            
+
             <div className="text-center p-6">
               <div className="w-16 h-16 bg-rose-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <ShoppingBag className="w-8 h-8 text-white" />
@@ -145,8 +152,8 @@ const EthnicWearCollection = () => {
           <p className="text-xl text-white mb-8">
             Explore our curated collection of authentic ethnic wear at Varsh ethnic wears and find your perfect style.
           </p>
-          <Link 
-            to="/products" 
+          <Link
+            to="/products"
             className="bg-white text-rose-gold px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 inline-flex items-center group"
           >
             Shop Now

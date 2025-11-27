@@ -1,6 +1,7 @@
 import React from 'react';
 import { Heart, Award, Users, Globe, Shield, Truck, Star } from 'lucide-react';
 import teamImage from '../public/team.jpg';
+import SEO from '../components/SEO';
 
 const AboutUs = () => {
   const stats = [
@@ -35,12 +36,18 @@ const AboutUs = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO
+        title="About Varsh Ethnic Wears | Our Story & Heritage"
+        description="Learn about Varsh Ethnic Wears, our journey, and our mission to bring authentic Indian ethnic wear to women worldwide. Meet our founders Varsha, Vivek, and Ayush."
+        keywords="about varsh ethnic wears, indian ethnic wear, handcrafted kurtis, artisan partners, cultural heritage, women's fashion, ethnic wear brand"
+        canonicalUrl="https://varshethnicwears.com/about"
+      />
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-rose-gold to-copper text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl font-bold mb-6">About Varsh Ethnic Wears</h1>
           <p className="text-xl opacity-90 max-w-3xl mx-auto">
-            We are passionate about bringing the authentic beauty of Indian ethnic wear to women worldwide, 
+            We are passionate about bringing the authentic beauty of Indian ethnic wear to women worldwide,
             connecting modern fashion with traditional craftsmanship.
           </p>
         </div>
@@ -57,13 +64,13 @@ const AboutUs = () => {
                   We didn't just start a label we started an <span className="font-semibold text-mahogany">एहसास</span>.
                 </p>
                 <p>
-                  A feeling that every skin tone deserves to shine. A belief that <span className="font-semibold text-mahogany">सुंदरता</span> isn't one-size-fits-all. 
-                  We're <span className="font-semibold text-mahogany">Vivek</span>, <span className="font-semibold text-mahogany">Varsha</span>, and <span className="font-semibold text-mahogany">Ayush</span> three friends who grew up surrounded by <span className="font-semibold text-mahogany">रंग, रिवाज़</span>, and roots. 
+                  A feeling that every skin tone deserves to shine. A belief that <span className="font-semibold text-mahogany">सुंदरता</span> isn't one-size-fits-all.
+                  We're <span className="font-semibold text-mahogany">Vivek</span>, <span className="font-semibold text-mahogany">Varsha</span>, and <span className="font-semibold text-mahogany">Ayush</span> three friends who grew up surrounded by <span className="font-semibold text-mahogany">रंग, रिवाज़</span>, and roots.
                   And we wanted to bring all of that into fashion that feels like <span className="font-semibold text-mahogany">अपनापन</span>.
                 </p>
                 <p>
-                  Our kurtis are not just stitched for style they carry <span className="font-semibold text-mahogany">परंपरा</span> with a touch of today. 
-                  From soft cottons to vibrant prints, from festive celebration to daily comfort each piece is made with love for 
+                  Our kurtis are not just stitched for style they carry <span className="font-semibold text-mahogany">परंपरा</span> with a touch of today.
+                  From soft cottons to vibrant prints, from festive celebration to daily comfort each piece is made with love for
                   <span className="font-semibold text-mahogany">Every skin colour</span> and for <span className="font-semibold text-mahogany">Every Soul</span>.
                 </p>
                 <p className="text-xl font-semibold text-mahogany">
@@ -123,16 +130,16 @@ const AboutUs = () => {
             <div className="bg-white rounded-2xl p-8 shadow-sm">
               <h3 className="text-2xl font-bold text-mahogany mb-4">Our Mission</h3>
               <p className="text-gray-700 leading-relaxed">
-                To preserve and promote India's rich cultural heritage through authentic ethnic wear, 
-                while supporting local artisans and providing modern women with beautiful, 
+                To preserve and promote India's rich cultural heritage through authentic ethnic wear,
+                while supporting local artisans and providing modern women with beautiful,
                 high-quality traditional clothing that celebrates their roots.
               </p>
             </div>
             <div className="bg-white rounded-2xl p-8 shadow-sm">
               <h3 className="text-2xl font-bold text-mahogany mb-4">Our Vision</h3>
               <p className="text-gray-700 leading-relaxed">
-                To become the leading platform for authentic Indian ethnic wear globally, 
-                connecting artisans with customers worldwide and ensuring that traditional 
+                To become the leading platform for authentic Indian ethnic wear globally,
+                connecting artisans with customers worldwide and ensuring that traditional
                 craftsmanship continues to thrive in the modern world.
               </p>
             </div>
@@ -144,7 +151,7 @@ const AboutUs = () => {
       <div className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Meet Our Leadership Team</h2>
-          
+
           {/* Team Image and Leadership Info */}
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="relative">
@@ -270,4 +277,4 @@ const AboutUs = () => {
   );
 };
 
-export default AboutUs; 
+export default AboutUs;
