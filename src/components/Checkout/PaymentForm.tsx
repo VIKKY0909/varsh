@@ -18,7 +18,7 @@ interface PaymentFormProps {
     quantity: number;
     price: number;
   }>;
-  onPaymentSuccess: (paymentId: string) => void;
+  onPaymentSuccess: (response: any) => void;
   onPaymentFailure: (error: string) => void;
   onPaymentCancellation: () => void;
 }
@@ -65,9 +65,15 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   const paymentMethods = [
     {
       id: 'razorpay',
-      name: 'Secure Payment Gateway',
+      name: 'Online Payment',
       icon: Globe,
       description: 'Credit/Debit Cards, UPI, Net Banking'
+    },
+    {
+      id: 'cod',
+      name: 'Cash on Delivery',
+      icon: Smartphone,
+      description: 'Pay with cash upon delivery'
     }
   ];
 
@@ -77,19 +83,34 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       return;
     }
 
-    if (!razorpayLoaded) {
-      setError('Payment gateway is not ready. Please wait a moment and try again.');
-      return;
-    }
-
     // Validate customer information
     if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
       setError('Please ensure all customer information is complete');
       return;
     }
 
+    if (!paymentMethod) {
+       setError('Please select a payment method');
+       return;
+    }
+
     setLoading(true);
     setError(null);
+
+    // If COD is selected, bypass Razorpay
+    if (paymentMethod === 'cod') {
+      setTimeout(() => {
+        setLoading(false);
+        onPaymentSuccess('cod_pending');
+      }, 1000);
+      return;
+    }
+
+    if (!razorpayLoaded) {
+      setError('Payment gateway is not ready. Please wait a moment and try again.');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Use the provided order ID or generate a fallback
@@ -115,7 +136,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         (response) => {
           // Payment successful
           setLoading(false);
-          onPaymentSuccess(response.razorpay_payment_id);
+          onPaymentSuccess(response);
         },
         (error) => {
           // Payment failed or cancelled
@@ -142,10 +163,10 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
   return (
     <div>
-      {/* <h2 className="text-2xl font-bold text-mahogany mb-6">Payment Method</h2> */}
+      <h2 className="text-2xl font-bold text-mahogany mb-6">Payment Method</h2>
 
       {/* Payment Method Selection */}
-      {/* <div className="space-y-4 mb-8">
+      <div className="space-y-4 mb-8">
         {paymentMethods.map((method) => (
           <div
             key={method.id}
@@ -178,7 +199,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
             </div>
           </div>
         ))}
-      </div> */}
+      </div>
 
       {/* Payment Summary */}
       <div className="bg-gray-50 rounded-lg p-6 mb-6">
@@ -279,7 +300,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           <div>
             <h4 className="font-medium text-green-800">Secure Payment</h4>
             <p className="text-green-700 text-sm">
-              Your payment is processed securely by Razorpay. We never store your payment details.
+              {paymentMethod === 'cod' ? 'Cash will be collected by our delivery executive.' : 'Your payment is processed securely by Razorpay. We never store your payment details.'}
             </p>
           </div>
         </div>
@@ -288,15 +309,15 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       {/* Payment Button */}
       <button
         onClick={handlePayment}
-        disabled={loading || !termsAccepted || !razorpayLoaded}
+        disabled={loading || !termsAccepted || !paymentMethod || (paymentMethod === 'razorpay' && !razorpayLoaded)}
         className="w-full bg-rose-gold text-white py-4 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {loading ? (
           <>
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            Processing Payment...
+            Processing Order...
           </>
-        ) : !razorpayLoaded ? (
+        ) : (!razorpayLoaded && paymentMethod === 'razorpay') ? (
           <>
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
             Loading Payment Gateway...
@@ -304,7 +325,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         ) : (
           <>
             <Shield className="w-5 h-5" />
-            Pay ₹{total.toLocaleString()} Securely
+            {!paymentMethod ? 'Select Payment Method' : paymentMethod === 'cod' ? `Confirm Order (₹${total.toLocaleString()})` : `Pay ₹${total.toLocaleString()} Securely`}
           </>
         )}
       </button>

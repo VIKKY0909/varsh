@@ -11,6 +11,8 @@ interface Order {
   total_amount: number;
   status: string;
   payment_status: string;
+  payment_method: string;
+  tracking_number: string;
   created_at: string;
   estimated_delivery: string;
   shipping_cost: number;
@@ -287,7 +289,7 @@ const OrdersPage = () => {
         <div class="section">
           <div class="section-title">Payment Information</div>
           <p><strong>Payment Status:</strong> ${order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}</p>
-          <p><strong>Payment Method:</strong> Cash on Delivery</p>
+          <p><strong>Payment Method:</strong> ${order.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment'}</p>
         </div>
 
         ${order.shipping_address ? `

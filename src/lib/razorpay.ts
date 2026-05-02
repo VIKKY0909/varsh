@@ -21,7 +21,7 @@ export const validateRazorpayConfig = (): boolean => {
   return true;
 };
 
-// Create Razorpay order via Supabase Edge Function
+// Create Razorpay order via Supabase Edge Function or Local Server
 export const createRazorpayOrder = async (paymentDetails: {
   amount: number;
   currency: string;
@@ -32,8 +32,13 @@ export const createRazorpayOrder = async (paymentDetails: {
     throw new Error('Razorpay configuration is invalid. Please check your environment variables.');
   }
 
+  const isLocal = window.location.hostname === 'localhost';
+  const localApiUrl = 'http://localhost:3001/api/create-razorpay-order';
+  const supabaseApiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-razorpay-order`;
+
   try {
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-razorpay-order`, {
+    // Attempt Supabase Edge Function first (Production standard)
+    const response = await fetch(supabaseApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -42,36 +47,38 @@ export const createRazorpayOrder = async (paymentDetails: {
       body: JSON.stringify(paymentDetails),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      const errorMessage = data.error || 'Failed to create Razorpay order';
-      throw new Error(errorMessage);
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) return data.order;
     }
 
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to create Razorpay order');
+    // Fallback to local API only if on localhost and Supabase fails
+    if (isLocal) {
+      console.warn('Supabase Edge Function failed or not deployed, trying local fallback...');
+      const localResponse = await fetch(localApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentDetails),
+      });
+      if (localResponse.ok) {
+        const localData = await localResponse.json();
+        if (localData.success) return localData.order;
+      }
     }
 
-    return data.order;
+    throw new Error('Could not reach payment server. If you are developing locally, ensure your server or Edge Functions are running.');
   } catch (error) {
-    // Fallback: try direct Supabase function call
+    // Final attempt: try direct Supabase function call (SDK)
     try {
       const { data, error: supabaseError } = await supabase.functions.invoke('create-razorpay-order', {
         body: paymentDetails
       });
 
-      if (supabaseError) {
-        throw new Error(`Failed to create Razorpay order: ${supabaseError.message}`);
-      }
-
-      if (!data || !data.success) {
-        throw new Error(data?.error || 'Failed to create Razorpay order');
-      }
-
-      return data.order;
+      if (supabaseError) throw supabaseError;
+      if (data?.success) return data.order;
+      throw new Error(data?.error || 'Failed to create Razorpay order');
     } catch (fallbackError) {
-      throw new Error(`Failed to create Razorpay order: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+      throw new Error(`Payment Initialization Failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
     }
   }
 };
@@ -83,8 +90,13 @@ export const verifyPayment = async (paymentData: {
   razorpay_signature: string;
   orderId: string;
 }): Promise<boolean> => {
+  const isLocal = window.location.hostname === 'localhost';
+  const localApiUrl = 'http://localhost:3001/api/verify-payment';
+  const supabaseApiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`;
+
   try {
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`, {
+    // Attempt Supabase Edge Function first
+    const response = await fetch(supabaseApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -93,13 +105,25 @@ export const verifyPayment = async (paymentData: {
       body: JSON.stringify(paymentData),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Payment verification failed');
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) return data.isValid;
     }
 
-    return data.success && data.isValid;
+    // Fallback to local API
+    if (isLocal) {
+      const localResponse = await fetch(localApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentData),
+      });
+      if (localResponse.ok) {
+        const localData = await localResponse.json();
+        return localData.success && localData.isValid;
+      }
+    }
+
+    return false;
   } catch (error) {
     console.error('Payment verification error:', error);
     return false;

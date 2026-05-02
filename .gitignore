@@ -183,11 +183,13 @@ firestore-debug.log
 *.db
 *.sqlite
 *.sqlite3
+supabase/migrations/mywhole database
 
 # Backup files
 *.backup
 *.bak
 *.orig
+live_db_backup/
 
 # Archive files
 *.zip

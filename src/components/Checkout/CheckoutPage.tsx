@@ -171,7 +171,25 @@ const CheckoutPage = () => {
     setError(null);
 
     try {
+      // Final stock check before proceeding to payment
+      for (const item of items) {
+        const { data: product, error: stockCheckError } = await supabase
+          .from('products')
+          .select('stock_quantity, name')
+          .eq('id', item.product_id)
+          .single();
+
+        if (stockCheckError || !product) {
+          throw new Error(`Could not verify stock for ${item.product.name}`);
+        }
+
+        if (product.stock_quantity < item.quantity) {
+          throw new Error(`Sorry, ${product.name} only has ${product.stock_quantity} units left in stock.`);
+        }
+      }
+
       // Store order data temporarily (don't create in database yet)
+
       const orderData = {
         user_id: user.id,
         total_amount: total,
@@ -215,7 +233,7 @@ const CheckoutPage = () => {
   };
 
   // Handle payment success
-  const handlePaymentSuccess = async (paymentId: string) => {
+  const handlePaymentSuccess = async (paymentResponse: any) => {
     if (!user) {
       setError('User information missing. Please try again.');
       return;
@@ -232,43 +250,73 @@ const CheckoutPage = () => {
       }
 
       const orderData = JSON.parse(storedOrderData);
+      
+      // CRITICAL FIX: Ensure user_id matches the currently logged-in user in case 
+      // sessionStorage holds stale data from a previous session, which causes 403 RLS errors.
+      orderData.user_id = user.id;
 
-      // Verify payment with Razorpay before creating order
-      const verificationResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          razorpay_order_id: paymentId,
-          razorpay_payment_id: paymentId,
-          razorpay_signature: '', // This will be provided by Razorpay callback
-        }),
-      });
-
-      const verificationData = await verificationResponse.json();
-
-      if (!verificationData.success) {
-        throw new Error('Payment verification failed');
+      // PRE-FLIGHT CHECK: Ensure user has a profile record to avoid 403 errors on joins/RLS
+      try {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (!profile) {
+          console.log('Creating missing user profile during checkout...');
+          await supabase.from('user_profiles').insert({
+            user_id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || 'Customer'
+          });
+        }
+      } catch (e) {
+        console.warn('Profile check ignored:', e);
       }
 
-      console.log('Payment verified successfully, creating order...');
+      let finalOrderData = { ...orderData };
 
-      // Create order in database ONLY after successful payment verification
+      if (paymentResponse === 'cod_pending') {
+        console.log('Processing Cash on Delivery order...');
+        finalOrderData.payment_method = 'cod';
+        finalOrderData.payment_status = 'pending';
+      } else {
+        console.log('Processing Online payment order...');
+        finalOrderData.payment_method = 'online';
+        finalOrderData.payment_status = 'paid';
+        finalOrderData.razorpay_payment_id = paymentResponse.razorpay_payment_id;
+        finalOrderData.razorpay_order_id = paymentResponse.razorpay_order_id;
+        // Optionally store the signature for audit/dispute resolution
+        finalOrderData.notes = `${finalOrderData.notes || ''}\nRazorpay Signature: ${paymentResponse.razorpay_signature}`.trim();
+      }
+
+      // Extract order_items to insert separately later
+      const { order_items: itemsToInsert, ...orderInsertData } = finalOrderData;
+
+
+      // Create order in database ONLY after successful payment verification or if COD
+      console.log('Attempting to create order with data:', orderInsertData);
+      
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          ...orderData,
-          razorpay_payment_id: paymentId,
-          razorpay_order_id: paymentId
-        })
+        .insert(orderInsertData)
         .select()
         .single();
 
       if (orderError) {
-        console.error('Order creation error:', orderError);
-        throw orderError;
+        console.error('CRITICAL ERROR - Order Creation Failed:', orderError);
+        console.error('Error Details:', {
+          message: orderError.message,
+          code: orderError.code,
+          details: orderError.details,
+          hint: orderError.hint
+        });
+        
+        // Clear pending data to prevent stale retries
+        sessionStorage.removeItem('pendingOrderData');
+        
+        throw new Error(`${orderError.message} (${orderError.code})`);
       }
 
       console.log('Order created successfully:', order);
@@ -340,15 +388,15 @@ const CheckoutPage = () => {
 
       // Navigate to order confirmation after a short delay
       setTimeout(() => {
-        navigate(`/orders/${order.id}`);
+        navigate(`/order-confirmation/${order.id}`);
       }, 2000);
 
     } catch (error) {
       console.error('Payment confirmation error:', error);
-      setError(`Payment was successful but order creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError(`Order creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
-      // Clear stored order data on error
-      sessionStorage.removeItem('pendingOrderData');
+      // Send back to review step instead of losing order data
+      setCurrentStep(2);
     } finally {
       setProcessingPayment(false);
     }

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Share2, Truck, Shield, ChevronLeft, ChevronRight, Plus, Minus, Facebook, Twitter, Instagram, ZoomIn, ZoomOut, X } from 'lucide-react';
+import { Heart, ShoppingBag, Share2, Truck, Shield, ChevronLeft, ChevronRight, Plus, Minus, Facebook, Twitter, Instagram, ZoomIn, ZoomOut, X, Star } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/SEO';
+import ProductReviews from '../components/Products/ProductReviews';
 
 interface Product {
   id: string;
@@ -628,14 +629,14 @@ const ProductDetails = () => {
 
               <h1 className="text-3xl font-bold text-mahogany mb-4">{product.name}</h1>
 
-              {/*               <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <span className="text-sm text-gray-600">(4.8) • 124 reviews</span>
-              </div> */}
+                <span className="text-sm text-gray-600">Customer Reviews</span>
+              </div>
 
               <div className="flex items-center gap-4 mb-6">
                 <span className="text-3xl font-bold text-rose-gold">₹{product.price.toLocaleString()}</span>
@@ -805,6 +806,9 @@ const ProductDetails = () => {
             </div>
           </div>
         </div>
+
+        {/* Product Reviews */}
+        <ProductReviews productId={product.id} />
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (

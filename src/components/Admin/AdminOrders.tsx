@@ -12,6 +12,7 @@ interface OrderDetails {
   created_at: string;
   user_id: string;
   payment_status: string;
+  payment_method: string;
   shipping_cost: number;
   tax_amount: number;
   discount_amount: number;
@@ -184,6 +185,7 @@ function groupOrders(flatOrders: any[]): OrderDetails[] {
         created_at: row.created_at || new Date().toISOString(),
         user_id: row.user_id,
         payment_status: row.payment_status || 'pending',
+        payment_method: row.payment_method || 'online',
         shipping_cost: Number(row.shipping_cost) || 0,
         tax_amount: Number(row.tax_amount) || 0,
         discount_amount: Number(row.discount_amount) || 0,
@@ -238,6 +240,56 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [trackingData, setTrackingData] = useState({ number: '', timeline: '' });
+
+  useEffect(() => {
+    if (selectedOrder) {
+      setTrackingData({
+        number: selectedOrder.tracking_number || '',
+        timeline: selectedOrder.estimated_delivery ? new Date(selectedOrder.estimated_delivery).toISOString().split('T')[0] : ''
+      });
+    }
+  }, [selectedOrder]);
+
+  const handleUpdateTracking = async () => {
+    if (!selectedOrder) return;
+    try {
+      const updateData = {
+        tracking_number: trackingData.number || null,
+        estimated_delivery: trackingData.timeline || null
+      };
+      
+      const { error } = await supabase
+        .from('orders')
+        .update(updateData)
+        .eq('id', selectedOrder.id);
+
+      if (error) throw error;
+
+      // Also create an order_tracking entry for timelines
+      await supabase.from('order_tracking').insert({
+        order_id: selectedOrder.id,
+        status: 'Tracking Updated',
+        message: 'Order tracking info updated by admin',
+        tracking_number: updateData.tracking_number,
+        estimated_delivery: updateData.estimated_delivery
+      });
+
+      // Update local state
+      const updatedOrder = { 
+        ...selectedOrder, 
+        tracking_number: trackingData.number, 
+        estimated_delivery: trackingData.timeline 
+      };
+      setOrders(orders.map(o => o.id === selectedOrder.id ? updatedOrder : o));
+      setSelectedOrder(updatedOrder);
+      
+      alert('Tracking information updated successfully');
+    } catch (err) {
+      console.error('Error updating tracking:', err);
+      alert('Failed to update tracking');
+    }
+  };
 
   // Fetch orders from admin_orders_flat view
   const fetchOrders = async () => {
@@ -594,6 +646,7 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                         {selectedOrder.payment_status?.toUpperCase() || 'PENDING'}
                       </span>
                     </p>
+                    <p><strong>Payment Method:</strong> {selectedOrder.payment_method?.toUpperCase() || 'ONLINE'}</p>
                     {selectedOrder.razorpay_order_id && (
                       <p><strong>Razorpay Order ID:</strong> {selectedOrder.razorpay_order_id}</p>
                     )}
@@ -614,18 +667,51 @@ const AdminOrders = ({ orders: propOrders, onUpdateStatus, onDeleteOrder }: Orde
                 </div>
               </div>
 
-              {/* Shipping Address */}
-              <div>
-                <h4 className="font-semibold text-mahogany mb-3">Shipping Address</h4>
-                <div className="bg-gray-50 p-4 rounded-lg text-sm">
-                  <p><strong>{selectedOrder.shipping_address.full_name}</strong></p>
-                  <p>{selectedOrder.shipping_address.address_line_1}</p>
-                  {selectedOrder.shipping_address.address_line_2 && (
-                    <p>{selectedOrder.shipping_address.address_line_2}</p>
-                  )}
-                  <p>{selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} {selectedOrder.shipping_address.postal_code}</p>
-                  <p>{selectedOrder.shipping_address.country}</p>
-                  <p><strong>Phone:</strong> {selectedOrder.shipping_address.phone}</p>
+              {/* Shipping Address and Tracking */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold text-mahogany mb-3">Shipping Address</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg text-sm h-full">
+                    <p><strong>{selectedOrder.shipping_address.full_name}</strong></p>
+                    <p>{selectedOrder.shipping_address.address_line_1}</p>
+                    {selectedOrder.shipping_address.address_line_2 && (
+                      <p>{selectedOrder.shipping_address.address_line_2}</p>
+                    )}
+                    <p>{selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} {selectedOrder.shipping_address.postal_code}</p>
+                    <p>{selectedOrder.shipping_address.country}</p>
+                    <p><strong>Phone:</strong> {selectedOrder.shipping_address.phone}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-mahogany mb-3">Tracking Information</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg text-sm h-full flex flex-col gap-3">
+                    <div>
+                      <label className="block text-gray-700 text-xs font-bold mb-1">Tracking ID</label>
+                      <input 
+                        type="text" 
+                        value={trackingData.number}
+                        onChange={(e) => setTrackingData({...trackingData, number: e.target.value})}
+                        className="w-full border rounded px-3 py-2"
+                        placeholder="e.g. AWB123456789"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-xs font-bold mb-1">Estimated Delivery Date</label>
+                      <input 
+                        type="date"
+                        value={trackingData.timeline}
+                        onChange={(e) => setTrackingData({...trackingData, timeline: e.target.value})}
+                        className="w-full border rounded px-3 py-2"
+                      />
+                    </div>
+                    <button 
+                      onClick={handleUpdateTracking}
+                      className="bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 mt-2 transition-colors self-start font-medium"
+                    >
+                      Save Tracking Info
+                    </button>
+                  </div>
                 </div>
               </div>
 

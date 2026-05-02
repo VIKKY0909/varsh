@@ -56,8 +56,9 @@ const OrderConfirmation = () => {
 
         if (error) throw error;
         setOrder(data);
-      } catch (error) {
-        // Handle error silently
+      } catch (error: any) {
+        console.error('Order Fetch Error Details:', error?.message || error);
+        console.error('Full Error Object:', JSON.stringify(error, null, 2));
       } finally {
         setLoading(false);
       }

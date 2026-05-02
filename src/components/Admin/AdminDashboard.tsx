@@ -16,12 +16,14 @@ import {
   Clock,
   Truck,
   X,
-  Menu
+  Menu,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/dateUtils';
 import AdminOrders from './AdminOrders';
+import AdminReviews from './AdminReviews';
 
 // Helper function to group flat order data into structured orders
 function groupOrders(flatOrders: any[]): Order[] {
@@ -624,6 +626,7 @@ const AdminDashboard = () => {
                 { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
                 { id: 'products', name: 'Products', icon: Package },
                 { id: 'orders', name: 'Orders', icon: ShoppingCart },
+                { id: 'reviews', name: 'Reviews', icon: MessageSquare },
                 { id: 'users', name: 'Users', icon: Users }
               ].map((tab) => (
                 <button
@@ -880,6 +883,11 @@ const AdminDashboard = () => {
         {/* Orders Management */}
         {activeTab === 'orders' && (
           <AdminOrders />
+        )}
+
+        {/* Reviews Management */}
+        {activeTab === 'reviews' && (
+          <AdminReviews />
         )}
 
         {/* Users Management */}

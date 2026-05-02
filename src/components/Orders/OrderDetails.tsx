@@ -209,7 +209,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack }) => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Method</span>
-                  <span>Cash on Delivery</span>
+                  <span>{order.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment'}</span>
                 </div>
               </div>
             </div>

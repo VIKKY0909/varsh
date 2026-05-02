@@ -216,25 +216,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const subtotal = getTotalPrice();
     
-    // Find the highest delivery charge among products that have delivery charges
-    let maxDeliveryCharge = 0;
-    let highestFreeDeliveryThreshold = 0;
-    
-    for (const item of items) {
-      if (item.product.has_delivery_charge) {
-        maxDeliveryCharge = Math.max(maxDeliveryCharge, item.product.delivery_charge || 0);
-        highestFreeDeliveryThreshold = Math.max(highestFreeDeliveryThreshold, item.product.free_delivery_threshold || 999);
-      }
+    // Free delivery for orders strictly above 999
+    if (subtotal > 999) {
+      return 0;
     }
     
-    // If no products have delivery charges, return 0
-    if (maxDeliveryCharge === 0) return 0;
-    
-    // If subtotal meets the highest free delivery threshold, return 0
-    if (subtotal >= highestFreeDeliveryThreshold) return 0;
-    
-    // Otherwise return the highest delivery charge
-    return maxDeliveryCharge;
+    // Flat ₹100 charge otherwise
+    return 100;
   };
 
   const value = {

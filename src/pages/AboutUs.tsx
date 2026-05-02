@@ -46,9 +46,9 @@ const AboutUs = () => {
       <div className="bg-gradient-to-r from-rose-gold to-copper text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl font-bold mb-6">About Varsh Ethnic Wears</h1>
-          <p className="text-xl opacity-90 max-w-3xl mx-auto">
-            We are passionate about bringing the authentic beauty of Indian ethnic wear to women worldwide,
-            connecting modern fashion with traditional craftsmanship.
+          <p className="text-xl opacity-90 max-w-4xl mx-auto leading-relaxed">
+            Founded by Varsha Parmar with a clear mission: to make premium-quality Indian ethnic wear 
+            accessible and affordable for every woman across India.
           </p>
         </div>
       </div>
@@ -58,27 +58,20 @@ const AboutUs = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-mahogany mb-6">Our Story</h2>
-              <div className="space-y-4 text-gray-700 text-lg leading-relaxed">
+              <h2 className="text-3xl font-bold text-mahogany mb-6">Our Mission</h2>
+              <div className="space-y-6 text-gray-700 text-lg leading-relaxed">
                 <p>
-                  We didn't just start a label we started an <span className="font-semibold text-mahogany">एहसास</span>.
-                </p>
-                <p>
-                  A feeling that every skin tone deserves to shine. A belief that <span className="font-semibold text-mahogany">सुंदरता</span> isn't one-size-fits-all.
-                  We're <span className="font-semibold text-mahogany">Vivek</span>, <span className="font-semibold text-mahogany">Varsha</span>, and <span className="font-semibold text-mahogany">Ayush</span> three friends who grew up surrounded by <span className="font-semibold text-mahogany">रंग, रिवाज़</span>, and roots.
-                  And we wanted to bring all of that into fashion that feels like <span className="font-semibold text-mahogany">अपनापन</span>.
+                  Varsh Ethnic Wears is an Indian ethnic clothing brand founded by <span className="font-semibold text-mahogany">Varsha Parmar</span> with one clear mission — to make premium-quality kurtis accessible to every woman across India. From college girls looking for trendy short kurtis to working women seeking elegant office wear kurtis, Varsh Ethnic Wears has something beautiful for everyone at prices that never compromise your budget.
                 </p>
                 <p>
-                  Our kurtis are not just stitched for style they carry <span className="font-semibold text-mahogany">परंपरा</span> with a touch of today.
-                  From soft cottons to vibrant prints, from festive celebration to daily comfort each piece is made with love for
-                  <span className="font-semibold text-mahogany">Every skin colour</span> and for <span className="font-semibold text-mahogany">Every Soul</span>.
+                  Every kurti in our collection is handcrafted with care, made from quality fabrics, and designed to celebrate the modern Indian woman. Whether you're searching for a casual daily-wear kurti, a festive kurti set with dupatta, or a straight-cut kurti for office, you'll find it all right here starting from just <span className="font-bold text-rose-gold">₹399</span>.
                 </p>
-                <p className="text-xl font-semibold text-mahogany">
-                  This is not just ethnic wear. This is your story, <span className="text-rose-gold">आपकी पहचान</span>.
+                <p>
+                  We deliver <span className="font-medium">pan-India</span>, so no matter where you are — Gujarat, Maharashtra, Delhi, Rajasthan, or beyond — your perfect kurti is just a click away.
                 </p>
-                <p className="text-lg font-medium text-copper">
-                  Style for Every Skin. Designed for Every Soul.
-                </p>
+                <div className="bg-rose-50 border-l-4 border-rose-gold p-6 rounded-r-xl italic">
+                  "At Varsh Ethnic Wears, we believe that every woman deserves to look her best without spending a fortune. That belief is stitched into every piece we create."
+                </div>
               </div>
             </div>
             <div className="bg-gradient-to-br from-rose-50 to-copper-50 p-8 rounded-2xl">
@@ -150,44 +143,39 @@ const AboutUs = () => {
       {/* Team Section */}
       <div className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Meet Our Leadership Team</h2>
+          <h2 className="text-3xl font-bold text-mahogany text-center mb-12">Meet Our Founder</h2>
 
-          {/* Team Image and Leadership Info */}
+          {/* Founder Image and Info */}
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="relative">
               <img
-                src={teamImage}
-                alt="Varsh Leadership Team - Varsha, Vivek, and Ayush"
+                src="https://qajswgkrjldtugyymydg.supabase.co/storage/v1/object/public/product-images/1753381104151-k74ejjejt-0.jpg"
+                alt="Varsh Ethnic Wears - Signature Collection"
                 className="w-full h-96 lg:h-[500px] object-cover rounded-3xl shadow-2xl"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent rounded-3xl"></div>
               <div className="absolute bottom-8 left-8 right-8 text-white">
-                <h3 className="text-2xl font-bold mb-2">Our Leadership Team</h3>
-                <p className="text-lg font-medium text-rose-gold">Varsha, Vivek & Ayush</p>
-                <p className="text-sm opacity-90 mt-2">Bringing tradition to life with passion and dedication.</p>
+                <h3 className="text-2xl font-bold mb-2">Varsha Parmar</h3>
+                <p className="text-lg font-medium text-rose-gold">Founder & CEO</p>
+                <p className="text-sm opacity-90 mt-2">Visionary behind the brand, bringing ethnic elegance to every home.</p>
               </div>
             </div>
             <div className="bg-gradient-to-br from-rose-50 to-copper-50 p-8 rounded-2xl">
               <h3 className="text-2xl font-bold text-mahogany mb-6">Our Leadership</h3>
               <div className="space-y-6">
                 <div className="border-l-4 border-rose-gold pl-6">
-                  <h4 className="text-xl font-semibold text-mahogany mb-2">Varsha</h4>
+                  <h4 className="text-xl font-semibold text-mahogany mb-2">Varsha Parmar</h4>
                   <p className="text-rose-gold font-medium mb-2">Founder & CEO</p>
-                  <p className="text-gray-700">Passionate about bringing authentic ethnic wear to modern women and celebrating every skin tone. Leads our mission to celebrate <span className="font-semibold text-mahogany">हर रंग की त्वचा</span> through authentic ethnic wear that carries <span className="font-semibold text-mahogany">परंपरा</span> with a modern touch.</p>
-                </div>
-                <div className="border-l-4 border-rose-gold pl-6">
-                  <h4 className="text-xl font-semibold text-mahogany mb-2">Vivek</h4>
-                  <p className="text-rose-gold font-medium mb-2">Co-founder</p>
-                  <p className="text-gray-700">Ensuring seamless operations and customer satisfaction with a focus on quality and excellence. Manages the business operations to deliver the best experience to our customers.</p>
-                </div>
-                <div className="border-l-4 border-rose-gold pl-6">
-                  <h4 className="text-xl font-semibold text-mahogany mb-2">Ayush</h4>
-                  <p className="text-rose-gold font-medium mb-2">Co-founder</p>
-                  <p className="text-gray-700">Curating the finest collection of ethnic wear from across India with traditional values and modern appeal. Ensures every piece reflects our commitment to <span className="font-semibold text-mahogany">अपनापन</span> and cultural authenticity.</p>
+                  <p className="text-gray-700 leading-relaxed">
+                    Varsha Parmar started Varsh Ethnic Wears with a simple yet powerful dream: to see every Indian woman embrace her roots with pride and style. As the sole visionary behind the brand, she personally oversees the curation of every fabric and design, ensuring that quality and affordability go hand-in-hand. 
+                  </p>
+                  <p className="text-gray-700 mt-4 leading-relaxed">
+                    Her mission is to celebrate <span className="font-semibold text-mahogany">हर भारतीय नारी</span> through authentic ethnic wear that carries the weight of <span className="font-semibold text-mahogany">परंपरा</span> with a graceful modern touch.
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 text-mahogany mt-6 pt-4 border-t border-rose-gold/30">
                   <Star className="w-5 h-5" />
-                  <span className="font-semibold">Style for Every Skin. Designed for Every Soul.</span>
+                  <span className="font-semibold">Empowering Women. Preserving Tradition.</span>
                 </div>
               </div>
             </div>

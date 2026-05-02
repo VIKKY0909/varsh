@@ -72,43 +72,34 @@ serve(async (req) => {
 
     const isValid = expectedSignature === razorpay_signature
 
-    // Update order in database if provided
+    // Update order in database if a valid UUID is provided
     if (orderId && isValid) {
-      try {
-        // Update order payment status
-        const { error: updateError } = await supabase
-          .from('orders')
-          .update({
-            payment_status: 'paid',
-            razorpay_order_id: razorpay_order_id,
-            razorpay_payment_id: razorpay_payment_id,
-            status: 'confirmed'
-          })
-          .eq('id', orderId)
+      // Basic UUID validation regex
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      if (uuidRegex.test(orderId)) {
+        try {
+          // Update order payment status
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({
+              payment_status: 'paid',
+              razorpay_order_id: razorpay_order_id,
+              razorpay_payment_id: razorpay_payment_id,
+              status: 'confirmed'
+            })
+            .eq('id', orderId)
 
-        if (updateError) {
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Payment verified but failed to update order'
-            }),
-            {
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          )
-        }
-      } catch (dbError) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Payment verified but failed to update order'
-          }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          if (updateError) {
+            console.error('Failed to update order in database:', updateError);
+            // We don't return error here because payment IS verified
+            // The frontend will handle order creation if it hasn't happened yet
           }
-        )
+        } catch (dbError) {
+          console.error('Database update error:', dbError);
+        }
+      } else {
+        console.log('Provided orderId is not a valid UUID, skipping database update. orderId:', orderId);
       }
     }
 

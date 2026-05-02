@@ -35,9 +35,18 @@ const Header = () => {
   }, [isUserMenuOpen]);
 
   const handleSignOut = async () => {
-    await signOut();
-    setIsUserMenuOpen(false);
-    navigate('/');
+    try {
+      setIsUserMenuOpen(false);
+      await signOut();
+    } catch (err) {
+      console.warn('Sign out encountered an error, forcing local logout:', err);
+      // Even if Supabase fails, we want to clear local state
+      localStorage.clear();
+      sessionStorage.clear();
+    } finally {
+      navigate('/');
+      window.location.reload(); // Force refresh to clear any cached state
+    }
   };
 
   const handleSearch = (e) => {
