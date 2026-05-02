@@ -156,7 +156,8 @@ firebase-debug.log
 firestore-debug.log
 
 # Supabase
-.supabase/
+supabase/functions
+
 
 # Vercel
 .vercel
@@ -358,3 +359,7 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+.supabase/
+.supabase/functions
+.supabase/migrations
