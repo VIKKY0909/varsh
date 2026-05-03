@@ -41,7 +41,6 @@ const Auth = () => {
     // Real-time validation for password strength
     if (name === 'password' && !isLogin) {
       const passwordStrength = getPasswordStrength(value);
-      // You can use passwordStrength for UI feedback
     }
     
     // Clear error when user starts typing
@@ -81,7 +80,6 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Mark all fields as touched
     const allFields = isLogin ? ['email', 'password'] : ['email', 'password', 'confirmPassword', 'fullName', 'phone'];
     const newTouched = allFields.reduce((acc, field) => ({ ...acc, [field]: true }), {});
     setTouched(newTouched);
@@ -103,14 +101,13 @@ const Auth = () => {
           phone: formData.phone
         });
         if (error) {
+          console.error('Signup error details:', error);
           setErrors({ submit: error.message });
         } else {
-          // Show success message and switch to login
-          setIsLogin(true);
-          setFormData({ email: formData.email, password: '', confirmPassword: '', fullName: '', phone: '' });
+          setIsSignUpSuccess(true);
+          // Keep the email in state so we can show it in the success screen
           setErrors({});
           setTouched({});
-          // You might want to show a success toast here
         }
       }
     } catch (error) {
@@ -119,6 +116,42 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  if (isSignUpSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full text-center space-y-8 bg-white rounded-2xl shadow-lg p-10">
+          <div className="flex justify-center">
+            <div className="bg-green-100 p-4 rounded-full">
+              <Mail className="w-12 h-12 text-green-600" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-3xl font-bold text-mahogany">Check your email</h2>
+            <p className="text-gray-600">
+              We've sent a confirmation link to <span className="font-semibold text-mahogany">{formData.email}</span>.
+              Please click the link to activate your account.
+            </p>
+          </div>
+          <div className="pt-6">
+            <button
+              onClick={() => {
+                setIsSignUpSuccess(false);
+                setIsLogin(true);
+                setFormData({ email: '', password: '', confirmPassword: '', fullName: '', phone: '' });
+              }}
+              className="w-full bg-mahogany text-white py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-all"
+            >
+              Back to Sign In
+            </button>
+          </div>
+          <p className="text-sm text-gray-500 mt-4">
+            Didn't receive the email? Check your spam folder or try signing in to resend the link.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const getPasswordStrengthIndicator = () => {
     if (isLogin || !formData.password) return null;
@@ -171,7 +204,6 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        {/* Header */}
         <div className="text-center">
           <h2 className="text-3xl font-bold text-mahogany mb-2">
             {isLogin ? 'Welcome Back' : 'Create Account'}
@@ -184,10 +216,8 @@ const Auth = () => {
           </p>
         </div>
 
-        {/* Form */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Full Name (Sign Up only) */}
             {!isLogin && (
               <div>
                 <label htmlFor="fullName" className="block text-sm font-medium text-mahogany mb-2">
@@ -221,7 +251,6 @@ const Auth = () => {
               </div>
             )}
 
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-mahogany mb-2">
                 Email Address
@@ -253,7 +282,6 @@ const Auth = () => {
               )}
             </div>
 
-            {/* Phone (Sign Up only) */}
             {!isLogin && (
               <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-mahogany mb-2">
@@ -287,7 +315,6 @@ const Auth = () => {
               </div>
             )}
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-mahogany mb-2">
                 Password
@@ -321,7 +348,6 @@ const Auth = () => {
               {!isLogin && getPasswordStrengthIndicator()}
             </div>
 
-            {/* Confirm Password (Sign Up only) */}
             {!isLogin && (
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-mahogany mb-2">
@@ -356,24 +382,21 @@ const Auth = () => {
               </div>
             )}
 
-            {/* Submit Error */}
             {errors.submit && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-red-600 text-sm">{errors.submit}</p>
               </div>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-rose-gold to-copper text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full bg-gradient-to-r from-rose-gold to-copper text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
             </button>
           </form>
 
-          {/* Toggle Form */}
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
@@ -392,7 +415,6 @@ const Auth = () => {
           </div>
         </div>
 
-        {/* Additional Info */}
         <div className="text-center text-sm text-gray-500">
           <p>
             By {isLogin ? 'signing in' : 'creating an account'}, you agree to our{' '}
